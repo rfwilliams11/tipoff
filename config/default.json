@@ -1,0 +1,15 @@
+{
+  "favorites": [],
+  "colors": {
+    "score": "white",
+    "team": "cyan",
+    "status": "yellow",
+    "highlight": "green"
+  },
+  "polling": {
+    "live": 5000,
+    "halftime": 30000,
+    "scheduled": 60000,
+    "default": 15000
+  }
+}

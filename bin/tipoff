@@ -1,0 +1,12 @@
+#!/usr/bin/env node
+
+/**
+ * Tipoff - NBA Terminal Viewer
+ * Executable entry point
+ */
+
+const CLI = require('../src/cli');
+
+// Create CLI instance and parse arguments
+const cli = new CLI();
+cli.parse();

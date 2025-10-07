@@ -159,24 +159,24 @@ const Scoreboard = React.memo(({ onGameSelect }) => {
       
       // Build game line
       let gameLine = '';
-      
+
       // Away team
-      gameLine += awayTeamName.padEnd(20);
+      gameLine += awayTeamName.padEnd(25);
       if (awayScore) {
         gameLine += awayScore.padStart(3);
       } else {
         gameLine += '   ';
       }
-      
+
       gameLine += '  vs  ';
-      
+
       // Home team
       if (homeScore) {
-        gameLine += homeScore.padEnd(3);
+        gameLine += homeScore.padStart(3);
       } else {
         gameLine += '   ';
       }
-      gameLine += homeTeamName.padEnd(20);
+      gameLine += homeTeamName.padStart(25);
       
       // Game time/status
       gameLine += ` ${gameTime}`;

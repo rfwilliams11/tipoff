@@ -111,7 +111,7 @@ const App = React.memo(() => {
       }
     };
 
-    // Register global key handler
+    // Register global key handler with once flag to prevent double firing
     screen.on('keypress', handleGlobalKeys);
 
     // Cleanup
@@ -120,10 +120,8 @@ const App = React.memo(() => {
     };
   }, [
     currentView,
-    scoreboardState.date,
     dispatch,
-    switchToScoreboard,
-    switchToGame
+    switchToScoreboard
   ]);
   
   // Auto-fetch scoreboard when date changes

@@ -248,12 +248,14 @@ const mapGameDetailResponse = (espnResponse) => {
         displayClock: competition.status?.displayClock || '',
         period: competition.status?.period || 0
       },
+      startTime: espnResponse.header?.competitions?.[0]?.date || new Date().toISOString(),
       venue: competition.venue?.fullName || 'Unknown Venue'
     },
     liveData: {
       boxscore: mapBoxScoreData(espnResponse.boxscore),
       plays: mapPlayByPlayData(espnResponse.plays),
-      currentPlay: mapCurrentPlay(espnResponse.plays?.current)
+      currentPlay: mapCurrentPlay(espnResponse.plays?.current),
+      leaders: mapLeadersData(espnResponse.leaders)
     }
   }
 }
@@ -327,6 +329,35 @@ const mapCurrentPlay = (currentPlay) => {
     teamId: currentPlay.team?.id || null,
     teamAbbreviation: currentPlay.team?.abbreviation || null
   }
+}
+
+/**
+ * Map ESPN leaders data to internal format
+ * @param {Array} leaders - ESPN leaders data
+ * @returns {Array} Mapped leaders data
+ */
+const mapLeadersData = (leaders) => {
+  if (!leaders || !Array.isArray(leaders)) {
+    return []
+  }
+
+  return leaders.map(teamLeaders => ({
+    teamId: teamLeaders.team?.id,
+    abbreviation: teamLeaders.team?.abbreviation,
+    leaders: teamLeaders.leaders?.map(statLeader => ({
+      name: statLeader.name,
+      displayName: statLeader.displayName,
+      leaders: statLeader.leaders?.map(leader => ({
+        athlete: {
+          id: leader.athlete?.id,
+          displayName: leader.athlete?.displayName,
+          shortName: leader.athlete?.shortName,
+          headshot: leader.athlete?.headshot?.href
+        },
+        displayValue: leader.displayValue
+      })) || []
+    })) || []
+  }))
 }
 
 /**

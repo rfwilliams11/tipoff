@@ -182,28 +182,52 @@ const Game = React.memo(({ gameId, onBackToScoreboard }) => {
     // Build game content with better formatting
     const lines = [];
 
-    // Title bar
-    lines.push('┌─────────────────────────────────────────────────────────────────────────┐');
-
-    // Game matchup - more compact
+    // Game matchup
     const awayTeam = selectedGame.gameData.teams[1]; // Away team
     const homeTeam = selectedGame.gameData.teams[0]; // Home team
 
-    const awayLine = `${awayTeam.name} (${awayTeam.abbreviation})`.padEnd(45);
-    const homeLine = `${homeTeam.name} (${homeTeam.abbreviation})`.padEnd(45);
+    // Format game date/time
+    const gameDate = new Date(selectedGame.gameData.startTime);
+    const dateStr = gameDate.toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' });
+    const timeStr = gameDate.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' });
 
-    lines.push(`│ {bold}${awayLine}{/bold} {yellow-fg}${String(awayTeam.score).padStart(3)}{/yellow-fg} │`);
-    lines.push(`│ {bold}${homeLine}{/bold} {yellow-fg}${String(homeTeam.score).padStart(3)}{/yellow-fg} │`);
-    lines.push('├─────────────────────────────────────────────────────────────────────────┤');
+    // Title bar with date/time - using proper box drawing
+    const contentWidth = 73;
 
-    // Game status and info - compact
-    const statusLine = `Status: ${gameStatus}`.padEnd(50);
-    lines.push(`│ ${statusLine}│`);
-    if (selectedGame.gameData.venue && selectedGame.gameData.venue !== 'Unknown Venue') {
-      const venueLine = `Venue: ${selectedGame.gameData.venue}`.padEnd(50).substring(0, 50);
-      lines.push(`│ ${venueLine}│`);
-    }
-    lines.push('└─────────────────────────────────────────────────────────────────────────┘');
+    lines.push('┌' + '─'.repeat(contentWidth) + '┐');
+    const metaText = `${dateStr} • ${timeStr}`;
+    lines.push('│ ' + metaText.padEnd(contentWidth - 1) + '│');
+    lines.push('├' + '─'.repeat(contentWidth) + '┤');
+
+    // Team scores - build plain text first, then add formatting
+    const awayTeamText = `${awayTeam.name} (${awayTeam.abbreviation})`;
+    const homeTeamText = `${homeTeam.name} (${homeTeam.abbreviation})`;
+
+    const awayScoreText = String(awayTeam.score);
+    const homeScoreText = String(homeTeam.score);
+
+    // Build the full line with spacing, then add tags
+    const awayFullText = (awayTeamText + ' '.repeat(contentWidth - 1 - awayTeamText.length - awayScoreText.length) + awayScoreText);
+    const homeFullText = (homeTeamText + ' '.repeat(contentWidth - 1 - homeTeamText.length - homeScoreText.length) + homeScoreText);
+
+    // Now add formatting tags
+    lines.push('│ ' + `{bold}${awayTeamText}{/bold}` + ' '.repeat(contentWidth - 1 - awayTeamText.length - awayScoreText.length) + `{yellow-fg}${awayScoreText}{/yellow-fg}` + '│');
+    lines.push('│ ' + `{bold}${homeTeamText}{/bold}` + ' '.repeat(contentWidth - 1 - homeTeamText.length - homeScoreText.length) + `{yellow-fg}${homeScoreText}{/yellow-fg}` + '│');
+
+    lines.push('├' + '─'.repeat(contentWidth) + '┤');
+
+    // Status indicator
+    const status = selectedGame.gameData.status;
+    const statusText = status.completed ? 'FINAL' :
+                       status.description === 'Scheduled' ? 'UPCOMING' :
+                       gameStatus;
+
+    const statusIndicator = status.completed ? '{yellow-fg}FINAL{/yellow-fg}' :
+                           status.description === 'Scheduled' ? '{cyan-fg}UPCOMING{/cyan-fg}' :
+                           `{green-fg}${gameStatus}{/green-fg}`;
+
+    lines.push('│ ' + statusIndicator.padEnd(contentWidth - 1 + statusIndicator.length - statusText.length) + '│');
+    lines.push('└' + '─'.repeat(contentWidth) + '┘');
     lines.push('');
 
     // Live data section
@@ -215,46 +239,92 @@ const Game = React.memo(({ gameId, onBackToScoreboard }) => {
         lines.push('');
       }
 
-      // Box score - show only key stats in a compact format
-      if (selectedGame.liveData.boxscore && selectedGame.liveData.boxscore.length > 0) {
-        lines.push('{bold}{cyan-fg}▸ TEAM STATISTICS{/cyan-fg}{/bold}');
+      // Box score and Player Leaders side-by-side
+      const hasBoxscore = selectedGame.liveData.boxscore && selectedGame.liveData.boxscore.length > 0;
+      const hasLeaders = selectedGame.liveData.leaders && selectedGame.liveData.leaders.length > 0;
 
-        // Create a side-by-side comparison
-        const statsToShow = [
-          { key: 'fieldGoalPct', label: 'FG%', format: v => v },
-          { key: 'threePointPct', label: '3P%', format: v => v },
-          { key: 'freeThrowPct', label: 'FT%', format: v => v },
-          { key: 'rebounds', label: 'REB', format: v => v },
-          { key: 'assists', label: 'AST', format: v => v },
-          { key: 'turnovers', label: 'TO', format: v => v },
-          { key: 'steals', label: 'STL', format: v => v },
-          { key: 'blocks', label: 'BLK', format: v => v }
-        ];
+      if (hasBoxscore || hasLeaders) {
+        // Two column layout: Team Stats | Stat Leaders
+        const leftColumn = [];
+        const rightColumn = [];
 
-        // Get stats for both teams
-        const awayStats = selectedGame.liveData.boxscore.find(ts =>
-          ts.teamId === awayTeam.id
-        );
-        const homeStats = selectedGame.liveData.boxscore.find(ts =>
-          ts.teamId === homeTeam.id
-        );
+        // Build Team Statistics column
+        if (hasBoxscore) {
+          leftColumn.push('{bold}{cyan-fg}▸ BOX SCORE{/cyan-fg}{/bold}');
 
-        if (awayStats && homeStats) {
-          // Header
-          lines.push(`  ${''.padEnd(15)} ${awayTeam.abbreviation.padEnd(8)} ${homeTeam.abbreviation.padEnd(8)}`);
-          lines.push(`  ${'-'.repeat(35)}`);
+          const statsToShow = [
+            { key: 'fieldGoalPct', label: 'FG%' },
+            { key: 'threePointFieldGoalPct', label: '3P%' },
+            { key: 'freeThrowPct', label: 'FT%' },
+            { key: 'totalRebounds', label: 'REB' },
+            { key: 'assists', label: 'AST' },
+            { key: 'turnovers', label: 'TO' },
+            { key: 'steals', label: 'STL' },
+            { key: 'blocks', label: 'BLK' }
+          ];
 
-          // Show each stat
-          statsToShow.forEach(({ key, label }) => {
-            const awayStat = awayStats.statistics?.find(s => s.name === key || s.abbreviation === key);
-            const homeStat = homeStats.statistics?.find(s => s.name === key || s.abbreviation === key);
+          const awayStats = selectedGame.liveData.boxscore.find(ts => ts.teamId === awayTeam.id);
+          const homeStats = selectedGame.liveData.boxscore.find(ts => ts.teamId === homeTeam.id);
 
-            if (awayStat || homeStat) {
-              const awayVal = (awayStat?.displayValue || 'N/A').padEnd(8);
-              const homeVal = (homeStat?.displayValue || 'N/A').padEnd(8);
-              lines.push(`  ${label.padEnd(15)} ${awayVal} ${homeVal}`);
+          if (awayStats && homeStats) {
+            leftColumn.push(`${''.padEnd(15)} ${awayTeam.abbreviation.padEnd(8)} ${homeTeam.abbreviation.padEnd(8)}`);
+            leftColumn.push(`${'-'.repeat(35)}`);
+
+            statsToShow.forEach(({ key, label }) => {
+              const awayStat = awayStats.statistics?.find(s => s.name === key || s.abbreviation === key);
+              const homeStat = homeStats.statistics?.find(s => s.name === key || s.abbreviation === key);
+
+              if (awayStat || homeStat) {
+                const awayVal = (awayStat?.displayValue || 'N/A').padEnd(8);
+                const homeVal = (homeStat?.displayValue || 'N/A').padEnd(8);
+                leftColumn.push(`${label.padEnd(15)} ${awayVal} ${homeVal}`);
+              }
+            });
+          }
+        }
+
+        // Build Stat Leaders column
+        if (hasLeaders) {
+          rightColumn.push('');
+
+          const awayLeaders = selectedGame.liveData.leaders.find(tl => tl.teamId === awayTeam.id);
+          const homeLeaders = selectedGame.liveData.leaders.find(tl => tl.teamId === homeTeam.id);
+
+          const leaderStats = ['points', 'rebounds', 'assists'];
+
+          leaderStats.forEach(statName => {
+            const awayLeader = awayLeaders?.leaders?.find(l => l.name === statName);
+            const homeLeader = homeLeaders?.leaders?.find(l => l.name === statName);
+
+            if (awayLeader?.leaders?.[0] || homeLeader?.leaders?.[0]) {
+              const statLabel = awayLeader?.displayName || homeLeader?.displayName || statName.toUpperCase();
+              rightColumn.push(`{bold}${statLabel}{/bold}`);
+
+              if (awayLeader?.leaders?.[0]) {
+                const leader = awayLeader.leaders[0];
+                const name = leader.athlete.shortName || leader.athlete.displayName;
+                rightColumn.push(`  ${awayTeam.abbreviation}: ${name.padEnd(15)} ${leader.displayValue.padStart(3)}`);
+              } else {
+                rightColumn.push('');
+              }
+
+              if (homeLeader?.leaders?.[0]) {
+                const leader = homeLeader.leaders[0];
+                const name = leader.athlete.shortName || leader.athlete.displayName;
+                rightColumn.push(`  ${homeTeam.abbreviation}: ${name.padEnd(15)} ${leader.displayValue.padStart(3)}`);
+              } else {
+                rightColumn.push('');
+              }
             }
           });
+        }
+
+        // Combine columns side by side
+        const maxLines = Math.max(leftColumn.length, rightColumn.length);
+        for (let i = 0; i < maxLines; i++) {
+          const left = (leftColumn[i] || '').padEnd(45);
+          const right = rightColumn[i] || '';
+          lines.push(`  ${left}${right}`);
         }
         lines.push('');
       }
@@ -274,7 +344,7 @@ const Game = React.memo(({ gameId, onBackToScoreboard }) => {
     }
 
     // Footer
-    lines.push('{dim}─────────────────────────────────────────────────────────────────────────{/dim}');
+    lines.push('─────────────────────────────────────────────────────────────────────────');
     lines.push('{cyan-fg}Keys:{/cyan-fg} {bold}c{/bold}=Scoreboard {bold}r{/bold}=Refresh {bold}↑↓{/bold}=Scroll {bold}q{/bold}=Quit');
 
     return lines.join('\n');

@@ -65,14 +65,11 @@ const Game = React.memo(({ gameId, onBackToScoreboard }) => {
       const pollInterval = setInterval(() => {
         dispatch(pollGameUpdates(gameId));
       }, pollingInterval);
-      
-      console.log(`Started polling for game ${gameId} every ${pollingInterval}ms`);
-      
+
       // Cleanup function
       return () => {
         clearInterval(pollInterval);
         dispatch(stopPolling(gameId));
-        console.log(`Stopped polling for game ${gameId}`);
       };
     }
   }, [selectedGame, gameId, pollingInterval, dispatch]);
@@ -329,15 +326,99 @@ const Game = React.memo(({ gameId, onBackToScoreboard }) => {
         lines.push('');
       }
 
-      // Recent plays preview - more compact
+      // Recent plays - full play-by-play log with color coding
       if (selectedGame.liveData.plays && selectedGame.liveData.plays.length > 0) {
         lines.push('{bold}{magenta-fg}▸ RECENT PLAYS{/magenta-fg}{/bold}');
-        const recentPlays = selectedGame.liveData.plays.slice(0, 8);
+        lines.push('');
+
+        // ESPN API returns plays in chronological order (oldest first)
+        // Filter out defensive rebounds first
+        const filteredPlays = selectedGame.liveData.plays.filter(play => {
+          const playType = (play.type || '').toLowerCase();
+          const desc = (play.description || '').toLowerCase();
+
+          // Skip defensive rebounds
+          if (playType.includes('rebound') && desc.includes('defensive')) {
+            return false;
+          }
+
+          return true;
+        });
+
+        // Get the last 20 plays (most recent) and reverse to show newest first
+        const recentPlays = filteredPlays.slice(-20).reverse();
+
         recentPlays.forEach(play => {
-          const quarter = play.period ? `Q${play.period}` : '   ';
-          const clock = (play.clock || '').padEnd(5);
-          const desc = play.description.length > 60 ? play.description.substring(0, 57) + '...' : play.description;
-          lines.push(`  ${quarter} ${clock} ${desc}`);
+          // Format period and clock - use the displayValue from API
+          const periodStr = play.periodDisplay || (play.period ? `${play.period}Q` : '   ');
+          const clockStr = (play.clock || '').padEnd(5);
+
+          // Determine play type color based on type
+          let typeColor = 'white-fg';
+          let typeText = '';
+
+          const playType = (play.type || '').toLowerCase();
+          const desc = (play.description || '').toLowerCase();
+
+          if (play.scoringPlay) {
+            // Scoring plays - use cyan
+            typeColor = 'cyan-fg';
+            if (playType.includes('3pt') || playType.includes('three point') || desc.includes('three point')) {
+              typeText = '[3PT]';
+            } else if (playType.includes('free throw')) {
+              typeText = '[FT]';
+            } else if (desc.includes('dunk')) {
+              typeText = '[Dunk]';
+            } else if (desc.includes('layup')) {
+              typeText = '[Layup]';
+            } else {
+              typeText = '[FG]';
+            }
+          } else if (playType.includes('rebound')) {
+            // Only offensive rebounds at this point (defensive filtered out)
+            typeColor = 'yellow-fg';
+            typeText = '[Rebound]';
+          } else if (playType.includes('steal')) {
+            typeColor = 'magenta-fg';
+            typeText = '[Steal]';
+          } else if (playType.includes('block')) {
+            typeColor = 'red-fg';
+            typeText = '[Block]';
+          } else if (playType.includes('turnover')) {
+            typeColor = 'red-fg';
+            typeText = '[TO]';
+          } else if (playType.includes('timeout')) {
+            typeColor = 'gray-fg';
+            typeText = '[Timeout]';
+          } else if (playType.includes('substitution') || playType.includes('sub ')) {
+            typeColor = 'gray-fg';
+            typeText = '[Sub]';
+          } else if (playType.includes('jumpball') || playType.includes('jump ball')) {
+            typeColor = 'blue-fg';
+            typeText = '[Jumpball]';
+          } else if (playType.includes('miss')) {
+            typeColor = 'gray-fg';
+            typeText = '[Miss]';
+          }
+
+          // Build the play line
+          const prefix = `[${periodStr}] ${clockStr}`;
+          const typeTag = typeText ? `{${typeColor}}${typeText.padEnd(12)}{/${typeColor}}` : ''.padEnd(12);
+
+          // Description - allow longer text, truncate only if extremely long
+          let descText = play.description || '';
+          const maxDescLength = 100;
+          if (descText.length > maxDescLength) {
+            descText = descText.substring(0, maxDescLength - 3) + '...';
+          }
+
+          // Add score if it's a scoring play - highlight with cyan
+          let scoreStr = '';
+          if (play.scoringPlay && (play.awayScore !== undefined || play.homeScore !== undefined)) {
+            scoreStr = ` {cyan-fg}{bold}${play.awayScore}-${play.homeScore}{/bold}{/cyan-fg}`;
+          }
+
+          lines.push(`  ${prefix} ${typeTag} ${descText}${scoreStr}`);
         });
         lines.push('');
       }

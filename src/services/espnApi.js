@@ -284,22 +284,31 @@ const mapBoxScoreData = (boxscore) => {
 
 /**
  * Map ESPN play-by-play data to internal format
- * @param {Object} plays - ESPN plays data
+ * @param {Array} plays - ESPN plays data (array of play objects)
  * @returns {Array} Mapped play-by-play data
  */
 const mapPlayByPlayData = (plays) => {
-  if (!plays?.items) {
+  // ESPN API returns plays as a direct array
+  if (!plays || !Array.isArray(plays)) {
     return []
   }
 
-  return plays.items.map(play => ({
+  return plays.map(play => ({
     id: play.id,
-    period: play.period || 0,
-    clock: play.clock || '',
+    sequenceNumber: play.sequenceNumber,
+    period: play.period?.number || play.period || 0,
+    periodDisplay: play.period?.displayValue || `Q${play.period?.number || play.period || 1}`,
+    clock: play.clock?.displayValue || play.clock || '',
     description: play.text || '',
     type: play.type?.text || 'Unknown',
+    typeId: play.type?.id || null,
     teamId: play.team?.id || null,
     teamAbbreviation: play.team?.abbreviation || null,
+    scoringPlay: play.scoringPlay || false,
+    scoreValue: play.scoreValue || 0,
+    awayScore: play.awayScore || 0,
+    homeScore: play.homeScore || 0,
+    shootingPlay: play.shootingPlay || false,
     participants: play.participants?.map(p => ({
       athlete: {
         id: p.athlete?.id,

@@ -44,7 +44,6 @@ class PollingManager {
       maxFailures = MAX_POLLING_FAILURES
     } = options
 
-    console.log(`Starting polling for game ${gameId}`)
 
     const poll = async () => {
       if (this.isShuttingDown || !this.activePolls.has(gameId)) {
@@ -66,7 +65,6 @@ class PollingManager {
         
         if (interval === null) {
           // Stop polling (e.g., game finished)
-          console.log(`Stopping polling for game ${gameId} - no longer needed`)
           this.stopPolling(gameId)
           onStop('completed')
           return
@@ -82,8 +80,6 @@ class PollingManager {
         })
         
       } catch (error) {
-        console.error(`Polling failed for game ${gameId}:`, error.message)
-        
         // Increment failure count
         const failures = (this.pollFailures.get(gameId) || 0) + 1
         this.pollFailures.set(gameId, failures)
@@ -92,7 +88,6 @@ class PollingManager {
         onError(error, failures)
         
         if (failures >= maxFailures) {
-          console.error(`Max polling failures (${maxFailures}) reached for game ${gameId}. Stopping polling.`)
           this.stopPolling(gameId)
           onStop('max_failures')
           return
@@ -125,7 +120,6 @@ class PollingManager {
       clearTimeout(pollInfo.timeoutId)
       this.activePolls.delete(gameId)
       this.pollFailures.delete(gameId)
-      console.log(`Stopped polling for game ${gameId}`)
     }
   }
 
@@ -133,12 +127,10 @@ class PollingManager {
    * Stop all active polling
    */
   stopAllPolling() {
-    console.log(`Stopping all polling (${this.activePolls.size} active polls)`)
-    
     for (const [gameId, pollInfo] of this.activePolls) {
       clearTimeout(pollInfo.timeoutId)
     }
-    
+
     this.activePolls.clear()
     this.pollFailures.clear()
   }
@@ -147,7 +139,6 @@ class PollingManager {
    * Gracefully shutdown the polling manager
    */
   shutdown() {
-    console.log('Shutting down polling manager')
     this.isShuttingDown = true
     this.stopAllPolling()
   }
@@ -189,7 +180,6 @@ class PollingManager {
   updatePollingInterval(gameId, newInterval) {
     const pollInfo = this.activePolls.get(gameId)
     if (pollInfo && newInterval !== pollInfo.interval) {
-      console.log(`Updating polling interval for game ${gameId}: ${pollInfo.interval}ms -> ${newInterval}ms`)
       pollInfo.interval = newInterval
     }
   }
@@ -265,19 +255,16 @@ const startGamePolling = (gameId, dispatch, pollAction, options = {}) => {
 
   pollingManager.startPolling(gameId, pollFunction, getInterval, {
     onSuccess: (result) => {
-      console.log(`Polling success for game ${gameId}`)
       if (options.onSuccess) {
         options.onSuccess(result)
       }
     },
     onError: (error, failures) => {
-      console.warn(`Polling error for game ${gameId} (failure ${failures}):`, error.message)
       if (options.onError) {
         options.onError(error, failures)
       }
     },
     onStop: (reason) => {
-      console.log(`Polling stopped for game ${gameId}. Reason: ${reason}`)
       if (options.onStop) {
         options.onStop(reason)
       }
@@ -322,26 +309,21 @@ const isGamePolling = (gameId) => {
  * Initialize polling service (call this on app startup)
  */
 const initializePollingService = () => {
-  console.log('Initializing polling service')
-  
   // Handle process termination gracefully
   const handleShutdown = () => {
-    console.log('Received shutdown signal, stopping all polling')
     pollingManager.shutdown()
   }
-  
+
   process.on('SIGINT', handleShutdown)
   process.on('SIGTERM', handleShutdown)
   process.on('exit', handleShutdown)
-  
+
   // Handle uncaught exceptions
   process.on('uncaughtException', (error) => {
-    console.error('Uncaught exception, stopping polling:', error)
     pollingManager.shutdown()
   })
-  
+
   process.on('unhandledRejection', (reason, promise) => {
-    console.error('Unhandled rejection, stopping polling:', reason)
     pollingManager.shutdown()
   })
 }

@@ -122,28 +122,23 @@ const gamesSlice = createSlice({
     startPolling: (state, action) => {
       const { gameId, interval } = action.payload
       state.pollingIntervals[gameId] = interval
-      console.log(`Started polling for game ${gameId} with interval ${interval}ms`)
     },
     
     stopPolling: (state, action) => {
       const gameId = action.payload
       delete state.pollingIntervals[gameId]
       delete state.lastPolled[gameId]
-      console.log(`Stopped polling for game ${gameId}`)
     },
     
     stopAllPolling: (state) => {
-      const pollingCount = Object.keys(state.pollingIntervals).length
       state.pollingIntervals = {}
       state.lastPolled = {}
-      console.log(`Stopped all polling (${pollingCount} games)`)
     },
     
     // Update polling interval for a game
     updatePollingInterval: (state, action) => {
       const { gameId, interval } = action.payload
       if (state.pollingIntervals[gameId] && state.pollingIntervals[gameId] !== interval) {
-        console.log(`Updated polling interval for game ${gameId}: ${state.pollingIntervals[gameId]}ms -> ${interval}ms`)
         state.pollingIntervals[gameId] = interval
       }
     },
@@ -179,8 +174,6 @@ const gamesSlice = createSlice({
         return total + (game.liveData?.plays?.length || 0)
       }, 0)
       state.memoryStats.lastCleanup = new Date().toISOString()
-      
-      console.log(`Cleaned up ${cleanedGames} old games and ${cleanedPlays} plays`)
     },
     
     // Limit play-by-play history for memory management
@@ -189,10 +182,8 @@ const gamesSlice = createSlice({
       const game = state.games[gameId]
       
       if (game && game.liveData && game.liveData.plays && game.liveData.plays.length > maxPlays) {
-        const originalLength = game.liveData.plays.length
         game.liveData.plays = game.liveData.plays.slice(0, maxPlays)
-        console.log(`Limited play history for game ${gameId}: ${originalLength} -> ${maxPlays} plays`)
-        
+
         // Update memory stats
         state.memoryStats.totalPlays = Object.values(state.games).reduce((total, game) => {
           return total + (game.liveData?.plays?.length || 0)
@@ -235,15 +226,13 @@ const gamesSlice = createSlice({
           return total + (game.liveData?.plays?.length || 0)
         }, 0)
         state.memoryStats.lastCleanup = new Date().toISOString()
-        
-        console.log(`Auto-cleanup: removed ${removedGames.length} games and ${cleanedPlays} plays`)
       }
       
-      // Limit play history for all games
+      // Limit play history for all games - keep most recent plays
       gameIds.forEach(gameId => {
         const game = state.games[gameId]
         if (game && game.liveData && game.liveData.plays && game.liveData.plays.length > MAX_PLAYS_HISTORY) {
-          game.liveData.plays = game.liveData.plays.slice(0, MAX_PLAYS_HISTORY)
+          game.liveData.plays = game.liveData.plays.slice(-MAX_PLAYS_HISTORY)
         }
       })
       
@@ -269,12 +258,12 @@ const gamesSlice = createSlice({
         
         if (action.payload) {
           const { gameId } = action.payload
-          
-          // Limit play-by-play history before storing
-          if (action.payload.liveData && action.payload.liveData.plays) {
-            action.payload.liveData.plays = action.payload.liveData.plays.slice(0, MAX_PLAYS_HISTORY)
+
+          // Limit play-by-play history before storing - keep most recent plays
+          if (action.payload.liveData && action.payload.liveData.plays && action.payload.liveData.plays.length > MAX_PLAYS_HISTORY) {
+            action.payload.liveData.plays = action.payload.liveData.plays.slice(-MAX_PLAYS_HISTORY)
           }
-          
+
           state.games[gameId] = action.payload
           state.lastPolled[gameId] = new Date().toISOString()
           
@@ -313,11 +302,11 @@ const gamesSlice = createSlice({
           }
           
           if (state.games[gameId] && updates) {
-            // Limit play-by-play history before updating
-            if (updates.liveData && updates.liveData.plays) {
-              updates.liveData.plays = updates.liveData.plays.slice(0, MAX_PLAYS_HISTORY)
+            // Limit play-by-play history before updating - keep most recent plays
+            if (updates.liveData && updates.liveData.plays && updates.liveData.plays.length > MAX_PLAYS_HISTORY) {
+              updates.liveData.plays = updates.liveData.plays.slice(-MAX_PLAYS_HISTORY)
             }
-            
+
             // Update game data with fresh information
             state.games[gameId] = {
               ...state.games[gameId],
@@ -332,19 +321,14 @@ const gamesSlice = createSlice({
               return total + (game.liveData?.plays?.length || 0)
             }, 0)
             
-            console.log(`Updated game ${gameId} via polling`)
           }
         }
       })
       
       // Handle pollGameUpdates rejected
       .addCase(pollGameUpdates.rejected, (state, action) => {
-        // Don't set loading error for polling failures, just log them
-        const gameId = action.meta?.arg
-        console.warn(`Polling failed for game ${gameId}:`, action.payload?.message)
-        
-        // If polling fails too many times, we might want to stop it
-        // This will be handled by the polling service
+        // Don't set loading error for polling failures
+        // If polling fails too many times, it will be handled by the polling service
       })
   }
 })

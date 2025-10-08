@@ -28,7 +28,7 @@ const pollingMiddleware = (store) => (next) => (action) => {
           }
         },
         onError: (error, failures) => {
-          console.warn(`Polling error for game ${gameId} (failure ${failures}):`, error.message)
+          // Silent error handling
         },
         onStop: (reason) => {
           store.dispatch(stopPolling(gameId))
@@ -96,7 +96,7 @@ const pollingMiddleware = (store) => (next) => (action) => {
           }
         },
         onError: (error, failures) => {
-          console.warn(`Polling error for game ${gameId} (failure ${failures}):`, error.message)
+          // Silent error handling
         },
         onStop: (reason) => {
           store.dispatch(stopPolling(gameId))

@@ -141,51 +141,127 @@ const Scoreboard = React.memo(({ onGameSelect }) => {
     return games.map((game, index) => {
       const gameWithFavorites = gamesWithFavorites[index] || game;
       const isFavoriteGame = gameWithFavorites.isFavoriteGame;
-      
+
       // Team names with favorite indicators
-      const awayTeamName = gameWithFavorites.awayTeamIsFavorite
-        ? `★ ${game.awayTeam.name}`
-        : game.awayTeam.name;
-      const homeTeamName = gameWithFavorites.homeTeamIsFavorite
-        ? `★ ${game.homeTeam.name}`
-        : game.homeTeam.name;
-      
+      const awayTeamBaseName = game.awayTeam.name;
+      const homeTeamBaseName = game.homeTeam.name;
+
       // Scores
       const awayScore = formatTeamScore(game.awayTeam, game);
       const homeScore = formatTeamScore(game.homeTeam, game);
-      
+
       // Game time/status
       const gameTime = formatGameTime(game);
-      
-      // Build game line
+
+      // Determine game status for styling
+      const isLive = !game.status.completed && game.status.description !== 'Scheduled';
+      const isFinal = game.status.completed;
+      const isScheduled = game.status.description === 'Scheduled';
+
+      // Determine winning/losing teams for score colors
+      const awayScoreNum = parseInt(awayScore) || 0;
+      const homeScoreNum = parseInt(homeScore) || 0;
+      const awayWinning = awayScoreNum > homeScoreNum && (isFinal || isLive);
+      const homeWinning = homeScoreNum > awayScoreNum && (isFinal || isLive);
+
+      // Build game line with fixed-width columns for proper alignment
+      const awayTeamWidth = 25;  // Fixed width for away team
+      const scoreWidth = 3;      // Fixed width for scores
+      const homeTeamWidth = 25;  // Fixed width for home team
+      const timeColumnStart = 65; // Where time should start (right-aligned)
+
       let gameLine = '';
+      let plainTextLength = 0;
 
-      // Away team
-      gameLine += awayTeamName.padEnd(25);
-      if (awayScore) {
-        gameLine += awayScore.padStart(3);
+      // Away team section
+      let awaySection = '';
+      let awayPlainText = '';
+      if (gameWithFavorites.awayTeamIsFavorite) {
+        awaySection = '{yellow-fg}★{/yellow-fg} {bold}' + awayTeamBaseName + '{/bold}';
+        awayPlainText = '★ ' + awayTeamBaseName;
       } else {
-        gameLine += '   ';
+        awaySection = '  ' + awayTeamBaseName;
+        awayPlainText = '  ' + awayTeamBaseName;
       }
+      // Pad to fixed width
+      const awayPadding = Math.max(0, awayTeamWidth - awayPlainText.length);
+      gameLine += awaySection + ' '.repeat(awayPadding);
+      plainTextLength += awayTeamWidth;
 
-      gameLine += '  vs  ';
+      // Away score
+      gameLine += '  '; // spacing before score
+      plainTextLength += 2;
 
-      // Home team
-      if (homeScore) {
-        gameLine += homeScore.padStart(3);
+      const awayScoreDisplay = awayScore || '';
+      if (awayScoreDisplay) {
+        const awayScorePadded = awayScoreDisplay.toString().padStart(scoreWidth);
+        if (awayWinning) {
+          gameLine += `{green-fg}{bold}${awayScorePadded}{/bold}{/green-fg}`;
+        } else if (homeWinning) {
+          gameLine += `{gray-fg}${awayScorePadded}{/gray-fg}`;
+        } else {
+          gameLine += awayScorePadded;
+        }
+        plainTextLength += scoreWidth;
       } else {
-        gameLine += '   ';
+        gameLine += ' '.repeat(scoreWidth);
+        plainTextLength += scoreWidth;
       }
-      gameLine += homeTeamName.padStart(25);
-      
-      // Game time/status
-      gameLine += ` ${gameTime}`;
-      
-      // Venue (if space allows)
-      if (game.venue && game.venue.name) {
-        gameLine += ` @ ${game.venue.name}`;
+
+      // @ symbol
+      gameLine += '  {cyan-fg}@{/cyan-fg}  ';
+      plainTextLength += 5; // 2 spaces + @ + 2 spaces
+
+      // Home score
+      const homeScoreDisplay = homeScore || '';
+      if (homeScoreDisplay) {
+        const homeScorePadded = homeScoreDisplay.toString().padStart(scoreWidth);
+        if (homeWinning) {
+          gameLine += `{green-fg}{bold}${homeScorePadded}{/bold}{/green-fg}`;
+        } else if (awayWinning) {
+          gameLine += `{gray-fg}${homeScorePadded}{/gray-fg}`;
+        } else {
+          gameLine += homeScorePadded;
+        }
+        plainTextLength += scoreWidth;
+      } else {
+        gameLine += ' '.repeat(scoreWidth);
+        plainTextLength += scoreWidth;
       }
-      
+
+      gameLine += '  '; // spacing after score
+      plainTextLength += 2;
+
+      // Home team section
+      let homeSection = '';
+      let homePlainText = '';
+      if (gameWithFavorites.homeTeamIsFavorite) {
+        homeSection = '{bold}' + homeTeamBaseName + '{/bold} {yellow-fg}★{/yellow-fg}';
+        homePlainText = homeTeamBaseName + ' ★';
+      } else {
+        homeSection = homeTeamBaseName;
+        homePlainText = homeTeamBaseName;
+      }
+      gameLine += homeSection;
+      plainTextLength += homePlainText.length;
+
+      // Calculate padding before time
+      const paddingNeeded = Math.max(1, timeColumnStart - plainTextLength);
+      gameLine += ' '.repeat(paddingNeeded);
+
+      // Time portion (right-aligned at fixed position with consistent width)
+      const timeWidth = 10; // Fixed width for time display
+      if (isLive) {
+        const paddedTime = gameTime.padStart(timeWidth);
+        gameLine += `{black-bg}{green-fg}{bold}${paddedTime}{/bold}{/green-fg}{/black-bg}`;
+      } else if (isFinal) {
+        const paddedTime = gameTime.padStart(timeWidth);
+        gameLine += `{yellow-fg}${paddedTime}{/yellow-fg}`;
+      } else {
+        const paddedTime = gameTime.padStart(timeWidth);
+        gameLine += `{cyan-fg}${paddedTime}{/cyan-fg}`;
+      }
+
       return {
         index,
         content: gameLine,
@@ -211,22 +287,31 @@ const Scoreboard = React.memo(({ onGameSelect }) => {
     
     // Build content for games list
     let content = '';
-    
-    // Header with date
-    const dateHeader = isToday ? `Today - ${formattedDate}` : formattedDate;
-    content += `${dateHeader}\n`;
-    content += '='.repeat(dateHeader.length) + '\n\n';
-    
+
+    // Header with date and box drawing
+    const dateHeaderText = isToday ? `Today - ${formattedDate}` : formattedDate;
+    const dateHeaderWithTags = `{bold}{cyan-fg}${dateHeaderText}{/cyan-fg}{/bold}`;
+    const headerWidth = 75;
+    content += '┌' + '─'.repeat(headerWidth) + '┐\n';
+    content += '│ ' + dateHeaderWithTags.padEnd(headerWidth - 1 + dateHeaderWithTags.length - dateHeaderText.length) + '│\n';
+    content += '└' + '─'.repeat(headerWidth) + '┘\n\n';
+
     // Games list
-    gameItems.forEach((gameItem) => {
-      const prefix = gameItem.index === selectedIndex ? '> ' : '  ';
+    gameItems.forEach((gameItem, idx) => {
+      const prefix = gameItem.index === selectedIndex ? '{magenta-fg}▶{/magenta-fg} ' : '  ';
       content += `${prefix}${gameItem.content}\n`;
+
+      // Add subtle separator between games (but not after last game)
+      if (idx < gameItems.length - 1) {
+        content += '  {gray-fg}' + '·'.repeat(70) + '{/gray-fg}\n';
+      }
     });
-    
+
     // Footer with navigation help
     content += '\n';
-    content += 'Navigation: ↑↓/jk=Select  Enter=View  n/p=Date  t=Today  c=Scoreboard  q=Quit';
-    
+    content += '{gray-fg}' + '─'.repeat(75) + '{/gray-fg}\n';
+    content += '{cyan-fg}Keys:{/cyan-fg} {bold}↑↓{/bold}/jk=Select  {bold}Enter{/bold}=View  {bold}n{/bold}/{bold}p{/bold}=Date  {bold}t{/bold}=Today  {bold}q{/bold}=Quit';
+
     return content;
   }, [isLoading, error, games.length, formattedDate, isToday, gameItems, selectedIndex]);
   

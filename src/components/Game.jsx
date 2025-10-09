@@ -81,20 +81,13 @@ const Game = React.memo(({ gameId, onBackToScoreboard }) => {
     
     const handleGameKeys = (ch, key) => {
       if (!key) return;
-      
+
       switch (key.name) {
         case 'c':
         case 'escape':
           // Return to scoreboard
           if (onBackToScoreboard) {
             onBackToScoreboard();
-          }
-          break;
-          
-        case 'r':
-          // Refresh game data
-          if (gameId) {
-            dispatch(fetchGameDetail(gameId));
           }
           break;
       }
@@ -236,9 +229,10 @@ const Game = React.memo(({ gameId, onBackToScoreboard }) => {
         lines.push('');
       }
 
-      // Box score and Player Leaders side-by-side
-      const hasBoxscore = selectedGame.liveData.boxscore && selectedGame.liveData.boxscore.length > 0;
-      const hasLeaders = selectedGame.liveData.leaders && selectedGame.liveData.leaders.length > 0;
+      // Box score and Player Leaders side-by-side (only show if game is not upcoming)
+      const isUpcoming = status.description === 'Scheduled';
+      const hasBoxscore = selectedGame.liveData.boxscore && selectedGame.liveData.boxscore.length > 0 && !isUpcoming;
+      const hasLeaders = selectedGame.liveData.leaders && selectedGame.liveData.leaders.length > 0 && !isUpcoming;
 
       if (hasBoxscore || hasLeaders) {
         // Two column layout: Team Stats | Stat Leaders
@@ -300,7 +294,8 @@ const Game = React.memo(({ gameId, onBackToScoreboard }) => {
               if (awayLeader?.leaders?.[0]) {
                 const leader = awayLeader.leaders[0];
                 const name = leader.athlete.shortName || leader.athlete.displayName;
-                rightColumn.push(`  ${awayTeam.abbreviation}: ${name.padEnd(15)} ${leader.displayValue.padStart(3)}`);
+                const teamLabel = `${awayTeam.abbreviation}:`;
+                rightColumn.push(`  ${teamLabel.padEnd(6)} ${name.padEnd(18)}${leader.displayValue.padStart(3)}`);
               } else {
                 rightColumn.push('');
               }
@@ -308,7 +303,8 @@ const Game = React.memo(({ gameId, onBackToScoreboard }) => {
               if (homeLeader?.leaders?.[0]) {
                 const leader = homeLeader.leaders[0];
                 const name = leader.athlete.shortName || leader.athlete.displayName;
-                rightColumn.push(`  ${homeTeam.abbreviation}: ${name.padEnd(15)} ${leader.displayValue.padStart(3)}`);
+                const teamLabel = `${homeTeam.abbreviation}:`;
+                rightColumn.push(`  ${teamLabel.padEnd(6)} ${name.padEnd(18)}${leader.displayValue.padStart(3)}`);
               } else {
                 rightColumn.push('');
               }
@@ -326,8 +322,8 @@ const Game = React.memo(({ gameId, onBackToScoreboard }) => {
         lines.push('');
       }
 
-      // Recent plays - full play-by-play log with color coding
-      if (selectedGame.liveData.plays && selectedGame.liveData.plays.length > 0) {
+      // Recent plays - full play-by-play log with color coding (only show if game is not final)
+      if (selectedGame.liveData.plays && selectedGame.liveData.plays.length > 0 && !status.completed) {
         lines.push('{bold}{magenta-fg}▸ RECENT PLAYS{/magenta-fg}{/bold}');
         lines.push('');
 
@@ -425,8 +421,8 @@ const Game = React.memo(({ gameId, onBackToScoreboard }) => {
     }
 
     // Footer
-    lines.push('─────────────────────────────────────────────────────────────────────────');
-    lines.push('{cyan-fg}Keys:{/cyan-fg} {bold}c{/bold}=Scoreboard {bold}r{/bold}=Refresh {bold}↑↓{/bold}=Scroll {bold}q{/bold}=Quit');
+    lines.push(`${'-'.repeat(80)}`);
+    lines.push('{cyan-fg}Keys:{/cyan-fg} {bold}c{/bold}=Scoreboard {bold}↑↓{/bold}=Scroll {bold}q{/bold}=Quit');
 
     return lines.join('\n');
   }, [isLoading, error, selectedGame, teamInfo, gameStatus]);

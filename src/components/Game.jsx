@@ -208,12 +208,21 @@ const Game = React.memo(({ gameId, onBackToScoreboard }) => {
 
     // Status indicator
     const status = selectedGame.gameData.status;
+
+    // Check if game is past start time but hasn't tipped off yet
+    const startTime = new Date(selectedGame.gameData.startTime);
+    const now = new Date();
+    const isPastStartTime = now > startTime;
+    const isScheduled = status.description === 'Scheduled' && status.period === 0;
+
     const statusText = status.completed ? 'FINAL' :
-                       status.description === 'Scheduled' ? 'UPCOMING' :
+                       isScheduled && isPastStartTime ? 'Tipping off soon...' :
+                       isScheduled ? 'UPCOMING' :
                        gameStatus;
 
     const statusIndicator = status.completed ? '{yellow-fg}FINAL{/yellow-fg}' :
-                           status.description === 'Scheduled' ? '{cyan-fg}UPCOMING{/cyan-fg}' :
+                           isScheduled && isPastStartTime ? '{green-fg}Tipping off soon...{/green-fg}' :
+                           isScheduled ? '{cyan-fg}UPCOMING{/cyan-fg}' :
                            `{green-fg}${gameStatus}{/green-fg}`;
 
     lines.push('│ ' + statusIndicator.padEnd(contentWidth - 1 + statusIndicator.length - statusText.length) + '│');
@@ -421,7 +430,7 @@ const Game = React.memo(({ gameId, onBackToScoreboard }) => {
     }
 
     // Footer
-    lines.push(`${'-'.repeat(80)}`);
+    lines.push(`${'-'.repeat(75)}`);
     lines.push('{cyan-fg}Keys:{/cyan-fg} {bold}c{/bold}=Scoreboard {bold}↑↓{/bold}=Scroll {bold}q{/bold}=Quit');
 
     return lines.join('\n');

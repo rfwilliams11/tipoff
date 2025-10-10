@@ -130,6 +130,21 @@ const App = React.memo(() => {
       dispatch(fetchScoreboard(scoreboardState.date));
     }
   }, [scoreboardState.date, currentView, dispatch]);
+
+  // Auto-poll scoreboard every 60 seconds when in scoreboard view
+  useEffect(() => {
+    if (currentView === 'scoreboard') {
+      // Set up polling interval (60 seconds)
+      const pollInterval = setInterval(() => {
+        dispatch(fetchScoreboard(scoreboardState.date));
+      }, 60000); // 60 seconds
+
+      // Cleanup function
+      return () => {
+        clearInterval(pollInterval);
+      };
+    }
+  }, [currentView, scoreboardState.date, dispatch]);
   
   // Render current view
   const renderCurrentView = () => {

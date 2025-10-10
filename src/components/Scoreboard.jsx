@@ -288,6 +288,16 @@ const Scoreboard = React.memo(({ onGameSelect }) => {
     // Build content for games list
     let content = '';
 
+    // ASCII Art Header
+    content += '{cyan-fg}';
+    content += '  ███╗   ██╗██████╗  █████╗     ████████╗██╗██████╗  ██████╗ ███████╗███████╗\n';
+    content += '  ████╗  ██║██╔══██╗██╔══██╗    ╚══██╔══╝██║██╔══██╗██╔═══██╗██╔════╝██╔════╝\n';
+    content += '  ██╔██╗ ██║██████╔╝███████║       ██║   ██║██████╔╝██║   ██║█████╗  █████╗  \n';
+    content += '  ██║╚██╗██║██╔══██╗██╔══██║       ██║   ██║██╔═══╝ ██║   ██║██╔══╝  ██╔══╝  \n';
+    content += '  ██║ ╚████║██████╔╝██║  ██║       ██║   ██║██║     ╚██████╔╝██║     ██║     \n';
+    content += '  ╚═╝  ╚═══╝╚═════╝ ╚═╝  ╚═╝       ╚═╝   ╚═╝╚═╝      ╚═════╝ ╚═╝     ╚═╝     \n';
+    content += '{/cyan-fg}\n';
+
     // Header with date and box drawing
     const dateHeaderText = isToday ? `Today - ${formattedDate}` : formattedDate;
     const dateHeaderWithTags = `{bold}{cyan-fg}${dateHeaderText}{/cyan-fg}{/bold}`;

@@ -5,6 +5,7 @@ const { useEffect, useState, useCallback } = React;
 // Import components
 const Scoreboard = require('./Scoreboard.jsx');
 const Game = require('./Game.jsx');
+const SplashScreen = require('./SplashScreen.jsx');
 
 // Import Redux actions and selectors
 const {
@@ -41,6 +42,7 @@ const App = React.memo(() => {
   
   // Local view state
   const [currentView, setCurrentView] = useState('scoreboard');
+  const [showSplash, setShowSplash] = useState(true);
   
   // Initialize application on mount
   useEffect(() => {
@@ -58,6 +60,11 @@ const App = React.memo(() => {
     initializeApp();
   }, [dispatch]);
   
+  // Handle splash screen completion
+  const handleSplashComplete = useCallback(() => {
+    setShowSplash(false);
+  }, []);
+
   // Handle view switching
   const switchToScoreboard = useCallback(() => {
     setCurrentView('scoreboard');
@@ -148,6 +155,13 @@ const App = React.memo(() => {
   
   // Render current view
   const renderCurrentView = () => {
+    // Show splash screen on first load
+    if (showSplash) {
+      return React.createElement(SplashScreen, {
+        onComplete: handleSplashComplete
+      });
+    }
+
     switch (currentView) {
       case 'game':
         if (gamesSelectedGameId) {
@@ -157,7 +171,7 @@ const App = React.memo(() => {
           });
         }
         // Fall through to scoreboard if no game selected
-        
+
       case 'scoreboard':
       default:
         return React.createElement(Scoreboard, {

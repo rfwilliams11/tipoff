@@ -1,9 +1,3 @@
-/**
- * NBA Teams utility functions
- * Provides team information, validation, and lookup functionality
- */
-
-// Complete NBA team information
 const NBA_TEAMS = {
   'ATL': { id: 1, name: 'Atlanta Hawks', conference: 'Eastern', division: 'Southeast' },
   'BOS': { id: 2, name: 'Boston Celtics', conference: 'Eastern', division: 'Atlantic' },
@@ -37,12 +31,9 @@ const NBA_TEAMS = {
   'WAS': { id: 27, name: 'Washington Wizards', conference: 'Eastern', division: 'Southeast' }
 }
 
-// Array of valid team abbreviations
 const VALID_TEAM_ABBREVIATIONS = Object.keys(NBA_TEAMS)
 
-// Team lookup by various identifiers
 const TEAM_ALIASES = {
-  // Common alternate abbreviations
   'BRK': 'BKN',
   'NETS': 'BKN',
   'BROOKLYN': 'BKN',
@@ -105,11 +96,6 @@ const TEAM_ALIASES = {
   'WIZARDS': 'WAS'
 }
 
-/**
- * Validates if a team abbreviation is valid
- * @param {string} team - Team abbreviation to validate
- * @returns {boolean} - True if valid
- */
 function isValidTeam(team) {
   if (!team || typeof team !== 'string') return false
   
@@ -118,11 +104,6 @@ function isValidTeam(team) {
          Object.keys(TEAM_ALIASES).includes(upperTeam)
 }
 
-/**
- * Normalizes a team identifier to the standard abbreviation
- * @param {string} team - Team identifier (abbreviation, alias, or name)
- * @returns {string|null} - Normalized abbreviation or null if invalid
- */
 function normalizeTeam(team) {
   if (!team || typeof team !== 'string') return null
   
@@ -141,11 +122,6 @@ function normalizeTeam(team) {
   return null
 }
 
-/**
- * Gets team information by abbreviation
- * @param {string} team - Team abbreviation
- * @returns {Object|null} - Team information or null if not found
- */
 function getTeamInfo(team) {
   const normalizedTeam = normalizeTeam(team)
   if (!normalizedTeam) return null
@@ -156,33 +132,18 @@ function getTeamInfo(team) {
   }
 }
 
-/**
- * Gets all teams in a conference
- * @param {string} conference - 'Eastern' or 'Western'
- * @returns {Array} - Array of team abbreviations
- */
 function getTeamsByConference(conference) {
   return VALID_TEAM_ABBREVIATIONS.filter(abbr => 
     NBA_TEAMS[abbr].conference === conference
   )
 }
 
-/**
- * Gets all teams in a division
- * @param {string} division - Division name
- * @returns {Array} - Array of team abbreviations
- */
 function getTeamsByDivision(division) {
   return VALID_TEAM_ABBREVIATIONS.filter(abbr => 
     NBA_TEAMS[abbr].division === division
   )
 }
 
-/**
- * Searches for teams by partial name match
- * @param {string} query - Search query
- * @returns {Array} - Array of matching team abbreviations
- */
 function searchTeams(query) {
   if (!query || typeof query !== 'string') return []
   
@@ -204,16 +165,9 @@ function searchTeams(query) {
     }
   })
   
-  // Remove duplicates and return
   return [...new Set(matches)]
 }
 
-/**
- * Formats team list for display
- * @param {Array} teams - Array of team abbreviations
- * @param {boolean} includeNames - Whether to include full names
- * @returns {string} - Formatted team list
- */
 function formatTeamList(teams, includeNames = false) {
   if (!Array.isArray(teams) || teams.length === 0) {
     return 'No teams'
@@ -229,11 +183,6 @@ function formatTeamList(teams, includeNames = false) {
   return teams.join(', ')
 }
 
-/**
- * Gets team suggestions for invalid input
- * @param {string} input - Invalid team input
- * @returns {Array} - Array of suggested team abbreviations
- */
 function getTeamSuggestions(input) {
   if (!input || typeof input !== 'string') return []
   
@@ -265,14 +214,9 @@ function getTeamSuggestions(input) {
     })
   }
   
-  return suggestions.slice(0, 5) // Limit to 5 suggestions
+  return suggestions.slice(0, 5)
 }
 
-/**
- * Validates and formats a list of favorite teams
- * @param {Array} favorites - Array of team identifiers
- * @returns {Object} - { valid: Array, invalid: Array, normalized: Array }
- */
 function validateFavoriteTeams(favorites) {
   if (!Array.isArray(favorites)) {
     return { valid: [], invalid: [], normalized: [] }
@@ -295,7 +239,6 @@ function validateFavoriteTeams(favorites) {
   return { valid, invalid, normalized }
 }
 
-// Export all functions and constants
 module.exports = {
   NBA_TEAMS,
   VALID_TEAM_ABBREVIATIONS,

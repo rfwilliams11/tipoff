@@ -23,13 +23,8 @@ const {
   selectSelectedGame
 } = require('../store/gamesSlice');
 
-// Import screen manager for global key handling
 const screenManager = require('../screen');
 
-/**
- * Main App component with view routing and global keyboard shortcuts
- * Manages the application's view state and coordinates between scoreboard and game views
- */
 const App = React.memo(() => {
   const dispatch = useDispatch();
   

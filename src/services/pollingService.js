@@ -1,7 +1,3 @@
-/**
- * Polling service for live game updates
- */
-
 // Polling intervals based on game status (in milliseconds)
 const POLLING_INTERVALS = {
   LIVE_GAME: 5000,        // 5 seconds for live games
@@ -11,10 +7,8 @@ const POLLING_INTERVALS = {
   DEFAULT: 15000          // 15 seconds default
 }
 
-// Maximum number of consecutive polling failures before stopping
 const MAX_POLLING_FAILURES = 5
 
-// Polling manager to track active polls
 class PollingManager {
   constructor() {
     this.activePolls = new Map()
@@ -22,15 +16,7 @@ class PollingManager {
     this.isShuttingDown = false
   }
 
-  /**
-   * Start polling for a specific game
-   * @param {string} gameId - The game ID to poll
-   * @param {Function} pollFunction - Function to call for polling
-   * @param {Function} getInterval - Function to determine polling interval
-   * @param {Object} options - Polling options
-   */
   startPolling(gameId, pollFunction, getInterval, options = {}) {
-    // Stop existing polling for this game
     this.stopPolling(gameId)
     
     if (this.isShuttingDown) {
@@ -110,10 +96,6 @@ class PollingManager {
     poll()
   }
 
-  /**
-   * Stop polling for a specific game
-   * @param {string} gameId - The game ID to stop polling
-   */
   stopPolling(gameId) {
     const pollInfo = this.activePolls.get(gameId)
     if (pollInfo) {
@@ -123,9 +105,6 @@ class PollingManager {
     }
   }
 
-  /**
-   * Stop all active polling
-   */
   stopAllPolling() {
     for (const [gameId, pollInfo] of this.activePolls) {
       clearTimeout(pollInfo.timeoutId)
@@ -135,18 +114,11 @@ class PollingManager {
     this.pollFailures.clear()
   }
 
-  /**
-   * Gracefully shutdown the polling manager
-   */
   shutdown() {
     this.isShuttingDown = true
     this.stopAllPolling()
   }
 
-  /**
-   * Get information about active polls
-   * @returns {Object} Polling status information
-   */
   getPollingStatus() {
     const activePolls = Array.from(this.activePolls.entries()).map(([gameId, info]) => ({
       gameId,
@@ -163,20 +135,10 @@ class PollingManager {
     }
   }
 
-  /**
-   * Check if a game is currently being polled
-   * @param {string} gameId - The game ID to check
-   * @returns {boolean} Whether the game is being polled
-   */
   isPolling(gameId) {
     return this.activePolls.has(gameId)
   }
 
-  /**
-   * Update polling interval for a game
-   * @param {string} gameId - The game ID
-   * @param {number} newInterval - New polling interval in milliseconds
-   */
   updatePollingInterval(gameId, newInterval) {
     const pollInfo = this.activePolls.get(gameId)
     if (pollInfo && newInterval !== pollInfo.interval) {
@@ -185,14 +147,8 @@ class PollingManager {
   }
 }
 
-// Create singleton polling manager
 const pollingManager = new PollingManager()
 
-/**
- * Determine polling interval based on game status
- * @param {Object} gameData - Game data containing status information
- * @returns {number|null} Polling interval in milliseconds, or null to stop polling
- */
 const getPollingInterval = (gameData) => {
   if (!gameData?.gameData?.status) {
     return POLLING_INTERVALS.DEFAULT
@@ -228,13 +184,6 @@ const getPollingInterval = (gameData) => {
   return POLLING_INTERVALS.DEFAULT
 }
 
-/**
- * Start polling for game updates
- * @param {string} gameId - The game ID to poll
- * @param {Function} dispatch - Redux dispatch function
- * @param {Function} pollAction - Redux action creator for polling
- * @param {Object} options - Polling options
- */
 const startGamePolling = (gameId, dispatch, pollAction, options = {}) => {
   const pollFunction = async (id) => {
     const result = await dispatch(pollAction(id))
@@ -273,43 +222,23 @@ const startGamePolling = (gameId, dispatch, pollAction, options = {}) => {
   })
 }
 
-/**
- * Stop polling for a specific game
- * @param {string} gameId - The game ID to stop polling
- */
 const stopGamePolling = (gameId) => {
   pollingManager.stopPolling(gameId)
 }
 
-/**
- * Stop all game polling
- */
 const stopAllGamePolling = () => {
   pollingManager.stopAllPolling()
 }
 
-/**
- * Get current polling status
- * @returns {Object} Polling status information
- */
 const getPollingStatus = () => {
   return pollingManager.getPollingStatus()
 }
 
-/**
- * Check if a game is currently being polled
- * @param {string} gameId - The game ID to check
- * @returns {boolean} Whether the game is being polled
- */
 const isGamePolling = (gameId) => {
   return pollingManager.isPolling(gameId)
 }
 
-/**
- * Initialize polling service (call this on app startup)
- */
 const initializePollingService = () => {
-  // Handle process termination gracefully
   const handleShutdown = () => {
     pollingManager.shutdown()
   }
@@ -317,8 +246,6 @@ const initializePollingService = () => {
   process.on('SIGINT', handleShutdown)
   process.on('SIGTERM', handleShutdown)
   process.on('exit', handleShutdown)
-
-  // Handle uncaught exceptions
   process.on('uncaughtException', (error) => {
     pollingManager.shutdown()
   })
@@ -328,9 +255,6 @@ const initializePollingService = () => {
   })
 }
 
-/**
- * Cleanup polling service (call this on app shutdown)
- */
 const cleanupPollingService = () => {
   pollingManager.shutdown()
 }

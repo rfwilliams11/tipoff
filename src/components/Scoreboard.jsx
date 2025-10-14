@@ -21,7 +21,6 @@ const {
 // Import screen manager for key handling
 const screenManager = require('../screen');
 
-// Hardcoded default colors (no longer configurable)
 const DEFAULT_COLORS = {
   score: 'white',
   teamName: 'cyan',
@@ -33,10 +32,6 @@ const DEFAULT_COLORS = {
   background: 'black'
 };
 
-/**
- * Scoreboard component for displaying and navigating NBA games
- * Handles game list rendering, keyboard navigation, and date display
- */
 const Scoreboard = React.memo(({ onGameSelect }) => {
   const dispatch = useDispatch();
 

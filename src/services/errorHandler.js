@@ -1,7 +1,3 @@
-/**
- * Error handling and retry logic for API requests
- */
-
 // Error types for classification
 const ERROR_TYPES = {
   NETWORK: 'NETWORK',
@@ -28,20 +24,13 @@ const RATE_LIMIT_CONFIG = {
   cooldownPeriod: 5000 // 5 seconds
 }
 
-// Request tracking for rate limiting
 const requestTracker = {
   requests: [],
   isRateLimited: false,
   rateLimitUntil: null
 }
 
-/**
- * Classify error type based on error properties
- * @param {Error} error - The error to classify
- * @returns {string} Error type from ERROR_TYPES
- */
 const classifyError = (error) => {
-  // Network connectivity errors
   if (error.code === 'ENOTFOUND' || 
       error.code === 'ECONNREFUSED' || 
       error.code === 'ENETUNREACH' ||
@@ -74,12 +63,6 @@ const classifyError = (error) => {
   return ERROR_TYPES.UNKNOWN
 }
 
-/**
- * Determine if an error is retryable
- * @param {Error} error - The error to check
- * @param {number} attemptCount - Current attempt number
- * @returns {boolean} Whether the error should be retried
- */
 const isRetryableError = (error, attemptCount = 0) => {
   if (attemptCount >= RETRY_CONFIG.maxRetries) {
     return false
@@ -101,12 +84,6 @@ const isRetryableError = (error, attemptCount = 0) => {
   }
 }
 
-/**
- * Calculate delay for exponential backoff with jitter
- * @param {number} attemptCount - Current attempt number (0-based)
- * @param {Error} error - The error that occurred
- * @returns {number} Delay in milliseconds
- */
 const calculateRetryDelay = (attemptCount, error) => {
   const errorType = classifyError(error)
   
@@ -127,10 +104,6 @@ const calculateRetryDelay = (attemptCount, error) => {
   return Math.floor(delay)
 }
 
-/**
- * Check if we're currently rate limited
- * @returns {boolean} Whether requests are currently rate limited
- */
 const isCurrentlyRateLimited = () => {
   const now = Date.now()
   
@@ -159,24 +132,13 @@ const isCurrentlyRateLimited = () => {
   return false
 }
 
-/**
- * Record a request for rate limiting tracking
- */
 const recordRequest = () => {
   const now = Date.now()
   requestTracker.requests.push(now)
-  
-  // Clean old requests
   const windowStart = now - RATE_LIMIT_CONFIG.requestWindow
   requestTracker.requests = requestTracker.requests.filter(time => time > windowStart)
 }
 
-/**
- * Create a retry wrapper for async functions
- * @param {Function} fn - The async function to wrap
- * @param {Object} options - Retry options
- * @returns {Function} Wrapped function with retry logic
- */
 const withRetry = (fn, options = {}) => {
   const config = { ...RETRY_CONFIG, ...options }
   
@@ -185,51 +147,32 @@ const withRetry = (fn, options = {}) => {
     
     for (let attempt = 0; attempt <= config.maxRetries; attempt++) {
       try {
-        // Check rate limiting before making request
         if (isCurrentlyRateLimited()) {
           const delay = requestTracker.rateLimitUntil - Date.now()
           throw new Error(`Rate limited. Please wait ${Math.ceil(delay / 1000)} seconds.`)
         }
-        
-        // Record the request
         recordRequest()
-        
-        // Execute the function
         const result = await fn(...args)
         return result
         
       } catch (error) {
         lastError = error
-        
-        // Don't retry on the last attempt
         if (attempt === config.maxRetries) {
           break
         }
-        
-        // Check if error is retryable
         if (!isRetryableError(error, attempt)) {
           break
         }
-        
-        // Calculate and wait for retry delay
         const delay = calculateRetryDelay(attempt, error)
         console.warn(`Request failed (attempt ${attempt + 1}/${config.maxRetries + 1}). Retrying in ${delay}ms...`, error.message)
         
         await new Promise(resolve => setTimeout(resolve, delay))
       }
     }
-    
-    // All retries exhausted, throw the last error
     throw lastError
   }
 }
 
-/**
- * Create enhanced error information for user display
- * @param {Error} error - The error to enhance
- * @param {string} context - Context where the error occurred
- * @returns {Object} Enhanced error information
- */
 const createErrorInfo = (error, context = 'API request') => {
   const errorType = classifyError(error)
   const isRetryable = isRetryableError(error)
@@ -301,10 +244,6 @@ const createErrorInfo = (error, context = 'API request') => {
   }
 }
 
-/**
- * Log error information for debugging
- * @param {Object} errorInfo - Enhanced error information
- */
 const logError = (errorInfo) => {
   const { type, context, technicalMessage, statusCode, errorCode, timestamp } = errorInfo
   
@@ -314,10 +253,6 @@ const logError = (errorInfo) => {
   if (errorCode) console.error(`  Error Code: ${errorCode}`)
 }
 
-/**
- * Get current rate limiting status
- * @returns {Object} Rate limiting status information
- */
 const getRateLimitStatus = () => {
   const now = Date.now()
   const windowStart = now - RATE_LIMIT_CONFIG.requestWindow

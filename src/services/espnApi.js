@@ -93,11 +93,6 @@ const makeGameDetailRequest = withRetry(async (gameId) => {
   baseDelay: 1000
 })
 
-/**
- * Fetch scoreboard data for a specific date with retry logic
- * @param {Date} date - The date to fetch games for
- * @returns {Promise<Object>} Scoreboard data
- */
 const fetchScoreboardData = async (date) => {
   try {
     const data = await makeScoreboardRequest(date)
@@ -119,11 +114,6 @@ const fetchScoreboardData = async (date) => {
   }
 }
 
-/**
- * Fetch detailed game data including play-by-play and box score with retry logic
- * @param {string} gameId - The ESPN game ID
- * @returns {Promise<Object>} Game detail data
- */
 const fetchGameDetailData = async (gameId) => {
   try {
     if (!gameId) {
@@ -149,11 +139,6 @@ const fetchGameDetailData = async (gameId) => {
   }
 }
 
-/**
- * Map ESPN scoreboard response to internal game format
- * @param {Object} espnResponse - Raw ESPN scoreboard response
- * @returns {Array} Array of mapped game objects
- */
 const mapScoreboardResponse = (espnResponse) => {
   if (!espnResponse?.events) {
     return []
@@ -196,14 +181,9 @@ const mapScoreboardResponse = (espnResponse) => {
       startTime: new Date(event.date).toISOString(),
       venue: competition.venue?.fullName || 'Unknown Venue'
     }
-  }).filter(Boolean) // Remove null entries
+  }).filter(Boolean)
 }
 
-/**
- * Map ESPN game detail response to internal game detail format
- * @param {Object} espnResponse - Raw ESPN game detail response
- * @returns {Object} Mapped game detail object
- */
 const mapGameDetailResponse = (espnResponse) => {
   if (!espnResponse?.header?.competitions?.[0]) {
     throw new Error('Invalid game detail response structure')
@@ -260,11 +240,6 @@ const mapGameDetailResponse = (espnResponse) => {
   }
 }
 
-/**
- * Map ESPN box score data to internal format
- * @param {Object} boxscore - ESPN box score data
- * @returns {Array} Mapped box score data
- */
 const mapBoxScoreData = (boxscore) => {
   if (!boxscore?.teams) {
     return []
@@ -282,13 +257,7 @@ const mapBoxScoreData = (boxscore) => {
   }))
 }
 
-/**
- * Map ESPN play-by-play data to internal format
- * @param {Array} plays - ESPN plays data (array of play objects)
- * @returns {Array} Mapped play-by-play data
- */
 const mapPlayByPlayData = (plays) => {
-  // ESPN API returns plays as a direct array
   if (!plays || !Array.isArray(plays)) {
     return []
   }
@@ -319,11 +288,6 @@ const mapPlayByPlayData = (plays) => {
   }))
 }
 
-/**
- * Map ESPN current play data to internal format
- * @param {Object} currentPlay - ESPN current play data
- * @returns {Object|null} Mapped current play data
- */
 const mapCurrentPlay = (currentPlay) => {
   if (!currentPlay) {
     return null
@@ -340,11 +304,6 @@ const mapCurrentPlay = (currentPlay) => {
   }
 }
 
-/**
- * Map ESPN leaders data to internal format
- * @param {Array} leaders - ESPN leaders data
- * @returns {Array} Mapped leaders data
- */
 const mapLeadersData = (leaders) => {
   if (!leaders || !Array.isArray(leaders)) {
     return []
@@ -369,12 +328,6 @@ const mapLeadersData = (leaders) => {
   }))
 }
 
-/**
- * Validate ESPN API response structure
- * @param {Object} response - API response to validate
- * @param {string} type - Type of response ('scoreboard' or 'gameDetail')
- * @returns {boolean} Whether the response is valid
- */
 const validateApiResponse = (response, type) => {
   if (!response || typeof response !== 'object') {
     return false
@@ -392,11 +345,6 @@ const validateApiResponse = (response, type) => {
   }
 }
 
-/**
- * Get appropriate error message for API errors
- * @param {Error} error - The error object
- * @returns {string} User-friendly error message
- */
 const getApiErrorMessage = (error) => {
   // If error has enhanced error info, use that
   if (error.errorInfo) {
@@ -427,11 +375,6 @@ const getApiErrorMessage = (error) => {
   return error.message || 'An unexpected error occurred while fetching data.'
 }
 
-/**
- * Check if an error is retryable
- * @param {Error} error - The error object
- * @returns {boolean} Whether the error should be retried
- */
 const isApiErrorRetryable = (error) => {
   // If error has enhanced error info, use that
   if (error.errorInfo) {

@@ -1,8 +1,3 @@
-/**
- * Color utility functions for terminal UI
- * Provides color validation, conversion, and management functionality
- */
-
 // Valid terminal colors supported by Blessed
 const VALID_COLORS = [
   // Basic colors
@@ -137,11 +132,6 @@ const COLOR_THEMES = {
   }
 }
 
-/**
- * Validates if a color is valid for terminal use
- * @param {string} color - Color name to validate
- * @returns {boolean} - True if valid
- */
 function isValidColor(color) {
   if (!color || typeof color !== 'string') return false
   
@@ -150,11 +140,6 @@ function isValidColor(color) {
          Object.keys(COLOR_ALIASES).includes(lowerColor)
 }
 
-/**
- * Normalizes a color name to a valid terminal color
- * @param {string} color - Color name to normalize
- * @returns {string|null} - Normalized color or null if invalid
- */
 function normalizeColor(color) {
   if (!color || typeof color !== 'string') return null
   
@@ -173,11 +158,6 @@ function normalizeColor(color) {
   return null
 }
 
-/**
- * Gets color suggestions for invalid input
- * @param {string} input - Invalid color input
- * @returns {Array} - Array of suggested colors
- */
 function getColorSuggestions(input) {
   if (!input || typeof input !== 'string') return []
   
@@ -207,42 +187,23 @@ function getColorSuggestions(input) {
     })
   }
   
-  return suggestions.slice(0, 5) // Limit to 5 suggestions
+  return suggestions.slice(0, 5)
 }
 
-/**
- * Validates a UI element name
- * @param {string} element - UI element name
- * @returns {boolean} - True if valid
- */
 function isValidUIElement(element) {
   if (!element || typeof element !== 'string') return false
   return Object.keys(UI_ELEMENTS).includes(element.toLowerCase())
 }
 
-/**
- * Gets all available UI elements
- * @returns {Array} - Array of UI element names
- */
 function getUIElements() {
   return Object.keys(UI_ELEMENTS)
 }
 
-/**
- * Gets description for a UI element
- * @param {string} element - UI element name
- * @returns {string|null} - Description or null if not found
- */
 function getUIElementDescription(element) {
   if (!element || typeof element !== 'string') return null
   return UI_ELEMENTS[element.toLowerCase()] || null
 }
 
-/**
- * Validates a complete color configuration
- * @param {Object} colors - Color configuration object
- * @returns {Object} - { valid: boolean, errors: Array, normalized: Object }
- */
 function validateColorConfig(colors) {
   if (!colors || typeof colors !== 'object') {
     return {
@@ -280,11 +241,6 @@ function validateColorConfig(colors) {
   }
 }
 
-/**
- * Applies a color theme
- * @param {string} themeName - Name of the theme to apply
- * @returns {Object|null} - Theme colors or null if theme not found
- */
 function applyColorTheme(themeName) {
   if (!themeName || typeof themeName !== 'string') return null
   
@@ -292,10 +248,6 @@ function applyColorTheme(themeName) {
   return theme ? { ...theme.colors } : null
 }
 
-/**
- * Gets all available color themes
- * @returns {Array} - Array of theme objects with name and description
- */
 function getColorThemes() {
   return Object.entries(COLOR_THEMES).map(([key, theme]) => ({
     key,
@@ -304,12 +256,6 @@ function getColorThemes() {
   }))
 }
 
-/**
- * Creates a color preview string for terminal display
- * @param {string} color - Color to preview
- * @param {string} text - Text to display (default: color name)
- * @returns {string} - Formatted string for terminal display
- */
 function createColorPreview(color, text = null) {
   const normalizedColor = normalizeColor(color)
   if (!normalizedColor) return `Invalid color: ${color}`
@@ -318,12 +264,6 @@ function createColorPreview(color, text = null) {
   return `{${normalizedColor}-fg}${displayText}{/}`
 }
 
-/**
- * Formats color configuration for display
- * @param {Object} colors - Color configuration
- * @param {boolean} showDescriptions - Whether to show element descriptions
- * @returns {string} - Formatted color configuration
- */
 function formatColorConfig(colors, showDescriptions = false) {
   if (!colors || typeof colors !== 'object') {
     return 'No color configuration'
@@ -340,11 +280,6 @@ function formatColorConfig(colors, showDescriptions = false) {
   return lines.join('\n')
 }
 
-/**
- * Converts hex color to nearest terminal color (basic approximation)
- * @param {string} hex - Hex color code (e.g., '#FF0000')
- * @returns {string|null} - Nearest terminal color or null if invalid
- */
 function hexToTerminalColor(hex) {
   if (!hex || typeof hex !== 'string') return null
   
@@ -388,11 +323,6 @@ function hexToTerminalColor(hex) {
   }
 }
 
-/**
- * Gets complementary color for better contrast
- * @param {string} color - Base color
- * @returns {string} - Complementary color
- */
 function getComplementaryColor(color) {
   const normalizedColor = normalizeColor(color)
   if (!normalizedColor) return 'white'
@@ -414,7 +344,6 @@ function getComplementaryColor(color) {
   return complementMap[normalizedColor] || 'white'
 }
 
-// Export all functions and constants
 module.exports = {
   VALID_COLORS,
   COLOR_ALIASES,

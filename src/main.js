@@ -237,3 +237,8 @@ module.exports = {
   isRunning: () => app.isApplicationRunning(),
   getOptions: () => app.getOptions()
 };
+
+// Auto-start when run directly (not when imported as module)
+if (require.main === module) {
+  app.start();
+}

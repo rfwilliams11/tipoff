@@ -1,6 +1,6 @@
 const { configureStore } = require('@reduxjs/toolkit')
-const scoreboardReducer = require('./scoreboardSlice').default
-const gamesReducer = require('./gamesSlice').default
+const scoreboardReducer = require('./scoreboardSlice')
+const gamesReducer = require('./gamesSlice')
 const { pollingMiddleware, pollingIntervalMiddleware } = require('./pollingMiddleware')
 const { createMemoryMonitoringMiddleware } = require('../utils/memoryManager')
 

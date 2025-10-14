@@ -486,36 +486,37 @@ const selectShouldPollGame = createSelector(
   }
 )
 
-module.exports = {
-  fetchGameDetail,
-  pollGameUpdates,
-  selectGame,
-  clearSelectedGame,
-  startPolling,
-  stopPolling,
-  stopAllPolling,
-  updatePollingInterval,
-  clearError,
-  cleanupOldGames,
-  limitPlayHistory,
-  performMemoryCleanup,
-  selectGamesState,
-  selectSelectedGameId,
-  selectIsLoading,
-  selectError,
-  selectAllGames,
-  selectPollingIntervals,
-  selectMemoryStats,
-  selectSelectedGame,
-  selectGameById,
-  selectGameStatistics,
-  selectPlayByPlay,
-  selectCurrentPlay,
-  selectRecentPlays,
-  selectVisiblePlays,
-  selectFormattedGameStats,
-  selectLiveGames,
-  selectPolledGames,
-  selectShouldPollGame,
-  default: gamesSlice.reducer
-}
+// Export the reducer as default
+module.exports = gamesSlice.reducer
+
+// Export named exports
+module.exports.fetchGameDetail = fetchGameDetail
+module.exports.pollGameUpdates = pollGameUpdates
+module.exports.selectGame = selectGame
+module.exports.clearSelectedGame = clearSelectedGame
+module.exports.startPolling = startPolling
+module.exports.stopPolling = stopPolling
+module.exports.stopAllPolling = stopAllPolling
+module.exports.updatePollingInterval = updatePollingInterval
+module.exports.clearError = clearError
+module.exports.cleanupOldGames = cleanupOldGames
+module.exports.limitPlayHistory = limitPlayHistory
+module.exports.performMemoryCleanup = performMemoryCleanup
+module.exports.selectGamesState = selectGamesState
+module.exports.selectSelectedGameId = selectSelectedGameId
+module.exports.selectIsLoading = selectIsLoading
+module.exports.selectError = selectError
+module.exports.selectAllGames = selectAllGames
+module.exports.selectPollingIntervals = selectPollingIntervals
+module.exports.selectMemoryStats = selectMemoryStats
+module.exports.selectSelectedGame = selectSelectedGame
+module.exports.selectGameById = selectGameById
+module.exports.selectGameStatistics = selectGameStatistics
+module.exports.selectPlayByPlay = selectPlayByPlay
+module.exports.selectCurrentPlay = selectCurrentPlay
+module.exports.selectRecentPlays = selectRecentPlays
+module.exports.selectVisiblePlays = selectVisiblePlays
+module.exports.selectFormattedGameStats = selectFormattedGameStats
+module.exports.selectLiveGames = selectLiveGames
+module.exports.selectPolledGames = selectPolledGames
+module.exports.selectShouldPollGame = selectShouldPollGame

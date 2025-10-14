@@ -9,7 +9,6 @@ import gamesSlice, {
   selectGame,
   clearSelectedGame
 } from '../../store/gamesSlice'
-import configSlice from '../../store/configSlice'
 
 describe('Core Application Logic', () => {
   let store
@@ -34,8 +33,7 @@ describe('Core Application Logic', () => {
     store = configureStore({
       reducer: {
         scoreboard: scoreboardSlice,
-        games: gamesSlice,
-        config: configSlice
+        games: gamesSlice
       },
       middleware: (getDefaultMiddleware) =>
         getDefaultMiddleware({
@@ -58,33 +56,6 @@ describe('Core Application Logic', () => {
           pollingIntervals: {},
           lastPolled: {},
           memoryStats: { totalGames: 0, totalPlays: 0, lastCleanup: null }
-        },
-        config: {
-          loading: false,
-          error: null,
-          favorites: [],
-          colors: {
-            score: 'white',
-            teamName: 'cyan',
-            selectedGame: 'yellow',
-            liveGame: 'green',
-            completedGame: 'gray',
-            error: 'red',
-            info: 'blue',
-            background: 'black'
-          },
-          display: {
-            showVenue: true,
-            showTime: true,
-            compactMode: false,
-            refreshInterval: 5000
-          },
-          polling: {
-            liveGameInterval: 5000,
-            scheduledGameInterval: 60000,
-            halftimeInterval: 30000
-          },
-          dirty: false
         }
       }
     })
@@ -155,10 +126,6 @@ describe('Core Application Logic', () => {
       // Test games state
       expect(state.games.selectedId).toBe(null)
       expect(state.games.loading).toBe(false)
-
-      // Test config state
-      expect(state.config.favorites).toEqual([])
-      expect(state.config.colors).toBeDefined()
     })
   })
 

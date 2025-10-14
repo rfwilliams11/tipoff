@@ -297,33 +297,34 @@ const selectGamesByPriority = createSelector(
   }
 )
 
-module.exports = {
-  fetchScoreboard,
-  navigateToNextDay,
-  navigateToPreviousDay,
-  navigateToToday,
-  selectNextGame,
-  selectPreviousGame,
-  selectGameByIndex,
-  clearError,
-  resetSelection,
-  selectScoreboardState,
-  selectGames,
-  selectSelectedGame,
-  selectSelectedGameId,
-  selectCurrentDate,
-  selectIsLoading,
-  selectError,
-  selectSelectedIndex,
-  selectLiveGames,
-  selectCompletedGames,
-  selectGamesByStatus,
-  selectSortedGames,
-  selectIsToday,
-  selectFormattedDate,
-  selectIsAtSeasonStart,
-  selectIsAtSeasonEnd,
-  selectGamesWithMetadata,
-  selectGamesByPriority,
-  default: scoreboardSlice.reducer
-}
+// Export the reducer as default
+module.exports = scoreboardSlice.reducer
+
+// Export named exports
+module.exports.fetchScoreboard = fetchScoreboard
+module.exports.navigateToNextDay = navigateToNextDay
+module.exports.navigateToPreviousDay = navigateToPreviousDay
+module.exports.navigateToToday = navigateToToday
+module.exports.selectNextGame = selectNextGame
+module.exports.selectPreviousGame = selectPreviousGame
+module.exports.selectGameByIndex = selectGameByIndex
+module.exports.clearError = clearError
+module.exports.resetSelection = resetSelection
+module.exports.selectScoreboardState = selectScoreboardState
+module.exports.selectGames = selectGames
+module.exports.selectSelectedGame = selectSelectedGame
+module.exports.selectSelectedGameId = selectSelectedGameId
+module.exports.selectCurrentDate = selectCurrentDate
+module.exports.selectIsLoading = selectIsLoading
+module.exports.selectError = selectError
+module.exports.selectSelectedIndex = selectSelectedIndex
+module.exports.selectLiveGames = selectLiveGames
+module.exports.selectCompletedGames = selectCompletedGames
+module.exports.selectGamesByStatus = selectGamesByStatus
+module.exports.selectSortedGames = selectSortedGames
+module.exports.selectIsToday = selectIsToday
+module.exports.selectFormattedDate = selectFormattedDate
+module.exports.selectIsAtSeasonStart = selectIsAtSeasonStart
+module.exports.selectIsAtSeasonEnd = selectIsAtSeasonEnd
+module.exports.selectGamesWithMetadata = selectGamesWithMetadata
+module.exports.selectGamesByPriority = selectGamesByPriority

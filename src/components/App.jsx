@@ -16,14 +16,12 @@ const {
   navigateToToday
 } = require('../store/scoreboardSlice');
 
-const { 
-  selectGame, 
+const {
+  selectGame,
   clearSelectedGame,
   selectSelectedGameId: selectGamesSelectedGameId,
   selectSelectedGame
 } = require('../store/gamesSlice');
-
-const { loadConfig } = require('../store/configSlice');
 
 // Import screen manager for global key handling
 const screenManager = require('../screen');
@@ -46,18 +44,7 @@ const App = React.memo(() => {
   
   // Initialize application on mount
   useEffect(() => {
-    const initializeApp = async () => {
-      try {
-        // Load user configuration
-        await dispatch(loadConfig()).unwrap();
-
-        // Initial scoreboard fetch will be triggered by the auto-fetch effect
-      } catch (error) {
-        console.error('Failed to initialize app:', error);
-      }
-    };
-
-    initializeApp();
+    // Initial scoreboard fetch will be triggered by the auto-fetch effect
   }, [dispatch]);
   
   // Handle splash screen completion

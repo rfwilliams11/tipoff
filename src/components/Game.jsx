@@ -14,12 +14,15 @@ const {
   selectError
 } = require('../store/gamesSlice');
 
-const {
-  selectPollingIntervalForGame
-} = require('../store/configSlice');
-
 // Import screen manager for key handling
 const screenManager = require('../screen');
+
+// Hardcoded default polling intervals (no longer configurable)
+const DEFAULT_POLLING_INTERVALS = {
+  liveGameInterval: 5000,
+  scheduledGameInterval: 60000,
+  halftimeInterval: 30000
+};
 
 /**
  * Game view container component for detailed game display
@@ -34,11 +37,19 @@ const Game = React.memo(({ gameId, onBackToScoreboard }) => {
   const isLoading = useSelector(selectIsLoading);
   const error = useSelector(selectError);
   
-  // Get polling interval based on game status
+  // Get polling interval based on game status (using hardcoded defaults)
   const currentGameStatus = selectedGame?.gameData?.status?.description || 'scheduled';
-  const pollingInterval = useSelector(state => 
-    selectPollingIntervalForGame(state, currentGameStatus.toLowerCase())
-  );
+  const pollingInterval = useMemo(() => {
+    const status = currentGameStatus.toLowerCase();
+    if (status.includes('progress') || status === 'in') {
+      return DEFAULT_POLLING_INTERVALS.liveGameInterval;
+    } else if (status === 'halftime' || status === 'timeout') {
+      return DEFAULT_POLLING_INTERVALS.halftimeInterval;
+    } else if (status === 'scheduled') {
+      return DEFAULT_POLLING_INTERVALS.scheduledGameInterval;
+    }
+    return DEFAULT_POLLING_INTERVALS.liveGameInterval;
+  }, [currentGameStatus]);
   
   // Fetch game details when component mounts or gameId changes
   useEffect(() => {

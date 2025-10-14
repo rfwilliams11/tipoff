@@ -1,6 +1,11 @@
 const { createSlice, createAsyncThunk, createSelector } = require('@reduxjs/toolkit')
-const { format, addDays, subDays, isToday } = require('date-fns')
+const { format, addDays, subDays, isToday, isAfter, isBefore, startOfDay } = require('date-fns')
 const { fetchScoreboardData, mapScoreboardResponse, validateApiResponse, getApiErrorMessage, isApiErrorRetryable } = require('../services/espnApi')
+
+// NBA Season boundaries (2025-2026 season)
+// Season runs from October 2025 to June 2026
+const SEASON_START_DATE = new Date('2025-10-01')
+const SEASON_END_DATE = new Date('2026-06-30')
 
 // Async thunk for fetching scoreboard data
 const fetchScoreboard = createAsyncThunk(
@@ -56,21 +61,33 @@ const scoreboardSlice = createSlice({
   reducers: {
     // Date navigation actions
     navigateToNextDay: (state) => {
-      state.date = addDays(new Date(state.date), 1).toISOString()
-      state.selectedIndex = 0
-      state.games = []
+      const currentDate = startOfDay(new Date(state.date))
+      const nextDate = addDays(currentDate, 1)
+
+      // Only navigate if next day is within season bounds
+      if (!isAfter(nextDate, SEASON_END_DATE)) {
+        state.date = nextDate.toISOString()
+        state.selectedIndex = 0
+        // Don't clear games - keep previous date's games visible during loading
+      }
     },
 
     navigateToPreviousDay: (state) => {
-      state.date = subDays(new Date(state.date), 1).toISOString()
-      state.selectedIndex = 0
-      state.games = []
+      const currentDate = startOfDay(new Date(state.date))
+      const previousDate = subDays(currentDate, 1)
+
+      // Only navigate if previous day is within season bounds
+      if (!isBefore(previousDate, SEASON_START_DATE)) {
+        state.date = previousDate.toISOString()
+        state.selectedIndex = 0
+        // Don't clear games - keep previous date's games visible during loading
+      }
     },
 
     navigateToToday: (state) => {
       state.date = new Date().toISOString()
       state.selectedIndex = 0
-      state.games = []
+      // Don't clear games - keep previous date's games visible during loading
     },
     
     // Game selection actions
@@ -213,6 +230,26 @@ const selectFormattedDate = createSelector(
   (date) => format(new Date(date), 'EEEE, MMMM d, yyyy')
 )
 
+// Selector to check if at season start boundary
+const selectIsAtSeasonStart = createSelector(
+  [selectCurrentDate],
+  (date) => {
+    const currentDate = startOfDay(new Date(date))
+    const previousDate = subDays(currentDate, 1)
+    return isBefore(previousDate, SEASON_START_DATE)
+  }
+)
+
+// Selector to check if at season end boundary
+const selectIsAtSeasonEnd = createSelector(
+  [selectCurrentDate],
+  (date) => {
+    const currentDate = startOfDay(new Date(date))
+    const nextDate = addDays(currentDate, 1)
+    return isAfter(nextDate, SEASON_END_DATE)
+  }
+)
+
 // Memoized selector for games with enhanced data
 const selectGamesWithMetadata = createSelector(
   [selectGames, selectCurrentDate],
@@ -284,6 +321,8 @@ module.exports = {
   selectSortedGames,
   selectIsToday,
   selectFormattedDate,
+  selectIsAtSeasonStart,
+  selectIsAtSeasonEnd,
   selectGamesWithMetadata,
   selectGamesByPriority,
   default: scoreboardSlice.reducer

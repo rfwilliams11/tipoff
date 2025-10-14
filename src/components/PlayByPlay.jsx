@@ -1,20 +1,22 @@
 const React = require('react');
-const { useSelector } = require('react-redux');
 const { useState, useEffect, useMemo, useCallback } = React;
-
-// Import Redux selectors
-const { selectColors } = require('../store/configSlice');
 
 // Import screen manager for key handling
 const screenManager = require('../screen');
+
+// Hardcoded default colors (no longer configurable)
+const DEFAULT_COLORS = {
+  liveGame: 'green',
+  error: 'red',
+  info: 'blue',
+  teamName: 'cyan'
+};
 
 /**
  * PlayByPlay component for displaying scrollable game events
  * Handles play formatting, keyboard scrolling, and event display
  */
 const PlayByPlay = React.memo(({ plays = [], currentPlay = null }) => {
-  // Redux state
-  const colors = useSelector(selectColors);
   
   // Local state for scrolling
   const [scrollPosition, setScrollPosition] = useState(0);
@@ -138,15 +140,15 @@ const PlayByPlay = React.memo(({ plays = [], currentPlay = null }) => {
   const getPlayTypeStyle = useCallback((playType) => {
     switch (playType) {
       case 'shot-made':
-        return { fg: colors.liveGame || 'green' };
+        return { fg: DEFAULT_COLORS.liveGame };
       case 'shot-missed':
-        return { fg: colors.error || 'red' };
+        return { fg: DEFAULT_COLORS.error };
       case 'free-throw':
-        return { fg: colors.info || 'blue' };
+        return { fg: DEFAULT_COLORS.info };
       case 'rebound':
-        return { fg: colors.teamName || 'cyan' };
+        return { fg: DEFAULT_COLORS.teamName };
       case 'turnover':
-        return { fg: colors.error || 'red' };
+        return { fg: DEFAULT_COLORS.error };
       case 'foul':
         return { fg: 'yellow' };
       case 'timeout':
@@ -156,7 +158,7 @@ const PlayByPlay = React.memo(({ plays = [], currentPlay = null }) => {
       default:
         return { fg: 'white' };
     }
-  }, [colors]);
+  }, []);
   
   // Memoized content generation
   const content = useMemo(() => {
@@ -198,10 +200,10 @@ const PlayByPlay = React.memo(({ plays = [], currentPlay = null }) => {
   // Memoized style
   const boxStyle = useMemo(() => {
     if (!plays || plays.length === 0) {
-      return { fg: colors.info || 'blue', bg: 'black' };
+      return { fg: DEFAULT_COLORS.info, bg: 'black' };
     }
     return { fg: 'white', bg: 'black' };
-  }, [plays?.length, colors]);
+  }, [plays?.length]);
   
   return React.createElement('box', {
     top: 0,

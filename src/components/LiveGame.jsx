@@ -1,17 +1,17 @@
 const React = require('react');
-const { useSelector } = require('react-redux');
 const { useMemo } = React;
 
-// Import Redux selectors
-const { selectColors } = require('../store/configSlice');
+// Hardcoded default colors (no longer configurable)
+const DEFAULT_COLORS = {
+  error: 'red',
+  info: 'blue'
+};
 
 /**
  * LiveGame component for displaying active game information
  * Shows quarter/time, team scores, statistics, and possession indicator
  */
 const LiveGame = React.memo(({ gameData, liveData }) => {
-  // Redux state
-  const colors = useSelector(selectColors);
   
   // Memoized game status formatting
   const gameStatus = useMemo(() => {
@@ -186,10 +186,10 @@ const LiveGame = React.memo(({ gameData, liveData }) => {
   // Memoized style
   const boxStyle = useMemo(() => {
     if (!gameData) {
-      return { fg: colors.error || 'red', bg: 'black' };
+      return { fg: DEFAULT_COLORS.error, bg: 'black' };
     }
     return { fg: 'white', bg: 'black' };
-  }, [gameData, colors]);
+  }, [gameData]);
   
   return React.createElement('box', {
     top: 0,

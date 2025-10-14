@@ -18,13 +18,20 @@ const {
   resetSelection
 } = require('../store/scoreboardSlice');
 
-const {
-  selectGamesWithFavorites,
-  selectColors
-} = require('../store/configSlice');
-
 // Import screen manager for key handling
 const screenManager = require('../screen');
+
+// Hardcoded default colors (no longer configurable)
+const DEFAULT_COLORS = {
+  score: 'white',
+  teamName: 'cyan',
+  selectedGame: 'yellow',
+  liveGame: 'green',
+  completedGame: 'gray',
+  error: 'red',
+  info: 'blue',
+  background: 'black'
+};
 
 /**
  * Scoreboard component for displaying and navigating NBA games
@@ -35,14 +42,12 @@ const Scoreboard = React.memo(({ onGameSelect }) => {
 
   // Redux state
   const games = useSelector(selectGames);
-  const gamesWithFavorites = useSelector(selectGamesWithFavorites);
   const selectedIndex = useSelector(selectSelectedIndex);
   const currentDate = useSelector(selectCurrentDate);
   const isLoading = useSelector(selectIsLoading);
   const error = useSelector(selectError);
   const formattedDate = useSelector(selectFormattedDate);
   const isToday = useSelector(selectIsToday);
-  const colors = useSelector(selectColors);
   
   // Handle keyboard navigation
   useEffect(() => {
@@ -128,21 +133,18 @@ const Scoreboard = React.memo(({ onGameSelect }) => {
   
   const getGameStatusColor = useCallback((game) => {
     if (game.status.completed) {
-      return colors.completedGame || 'gray';
+      return DEFAULT_COLORS.completedGame;
     } else if (game.status.description === 'Scheduled') {
-      return colors.teamName || 'cyan';
+      return DEFAULT_COLORS.teamName;
     } else {
-      return colors.liveGame || 'green';
+      return DEFAULT_COLORS.liveGame;
     }
-  }, [colors]);
+  }, []);
   
   // Memoized game items to prevent unnecessary re-renders
   const gameItems = useMemo(() => {
     return games.map((game, index) => {
-      const gameWithFavorites = gamesWithFavorites[index] || game;
-      const isFavoriteGame = gameWithFavorites.isFavoriteGame;
-
-      // Team names with favorite indicators
+      // Team names (no favorites anymore)
       const awayTeamBaseName = game.awayTeam.name;
       const homeTeamBaseName = game.homeTeam.name;
 
@@ -173,16 +175,10 @@ const Scoreboard = React.memo(({ onGameSelect }) => {
       let gameLine = '';
       let plainTextLength = 0;
 
-      // Away team section
-      let awaySection = '';
-      let awayPlainText = '';
-      if (gameWithFavorites.awayTeamIsFavorite) {
-        awaySection = '{yellow-fg}★{/yellow-fg} {bold}' + awayTeamBaseName + '{/bold}';
-        awayPlainText = '★ ' + awayTeamBaseName;
-      } else {
-        awaySection = '  ' + awayTeamBaseName;
-        awayPlainText = '  ' + awayTeamBaseName;
-      }
+      // Away team section (no favorite indicators)
+      const awaySection = awayTeamBaseName;
+      const awayPlainText = awayTeamBaseName;
+
       // Pad to fixed width
       const awayPadding = Math.max(0, awayTeamWidth - awayPlainText.length);
       gameLine += awaySection + ' '.repeat(awayPadding);
@@ -232,16 +228,10 @@ const Scoreboard = React.memo(({ onGameSelect }) => {
       gameLine += '  '; // spacing after score
       plainTextLength += 2;
 
-      // Home team section
-      let homeSection = '';
-      let homePlainText = '';
-      if (gameWithFavorites.homeTeamIsFavorite) {
-        homeSection = '{bold}' + homeTeamBaseName + '{/bold} {yellow-fg}★{/yellow-fg}';
-        homePlainText = homeTeamBaseName + ' ★';
-      } else {
-        homeSection = homeTeamBaseName;
-        homePlainText = homeTeamBaseName;
-      }
+      // Home team section (no favorite indicators)
+      const homeSection = homeTeamBaseName;
+      const homePlainText = homeTeamBaseName;
+
       gameLine += homeSection;
       plainTextLength += homePlainText.length;
 
@@ -265,46 +255,44 @@ const Scoreboard = React.memo(({ onGameSelect }) => {
       return {
         index,
         content: gameLine,
-        isFavoriteGame,
         statusColor: getGameStatusColor(game)
       };
     });
-  }, [games, gamesWithFavorites, formatTeamScore, formatGameTime, getGameStatusColor]);
+  }, [games, formatTeamScore, formatGameTime, getGameStatusColor]);
   
   // Memoized content generation
   const content = useMemo(() => {
-    if (isLoading) {
-      return 'Loading games...';
-    }
-
-    if (error) {
-      return `Error loading games: ${error}\n\nPress 'r' to retry or 'n'/'p' to change date`;
-    }
-
-    if (games.length === 0) {
-      return `No games scheduled for ${formattedDate}\n\nPress 'n'/'p' to navigate dates or 't' for today`;
-    }
-    
     // Build content for games list
     let content = '';
 
-    // ASCII Art Header
+    // ASCII Art Header - always visible
     content += '{cyan-fg}';
-    content += '  ███╗   ██╗██████╗  █████╗     ████████╗██╗██████╗  ██████╗ ███████╗███████╗\n';
-    content += '  ████╗  ██║██╔══██╗██╔══██╗    ╚══██╔══╝██║██╔══██╗██╔═══██╗██╔════╝██╔════╝\n';
-    content += '  ██╔██╗ ██║██████╔╝███████║       ██║   ██║██████╔╝██║   ██║█████╗  █████╗  \n';
-    content += '  ██║╚██╗██║██╔══██╗██╔══██║       ██║   ██║██╔═══╝ ██║   ██║██╔══╝  ██╔══╝  \n';
-    content += '  ██║ ╚████║██████╔╝██║  ██║       ██║   ██║██║     ╚██████╔╝██║     ██║     \n';
-    content += '  ╚═╝  ╚═══╝╚═════╝ ╚═╝  ╚═╝       ╚═╝   ╚═╝╚═╝      ╚═════╝ ╚═╝     ╚═╝     \n';
+    content += '  ███╗   ██╗██████╗  █████╗    ████████╗██╗██████╗  ██████╗ ███████╗███████╗\n';
+    content += '  ████╗  ██║██╔══██╗██╔══██╗   ╚══██╔══╝██║██╔══██╗██╔═══██╗██╔════╝██╔════╝\n';
+    content += '  ██╔██╗ ██║██████╔╝███████║      ██║   ██║██████╔╝██║   ██║█████╗  █████╗  \n';
+    content += '  ██║╚██╗██║██╔══██╗██╔══██║      ██║   ██║██╔═══╝ ██║   ██║██╔══╝  ██╔══╝  \n';
+    content += '  ██║ ╚████║██████╔╝██║  ██║      ██║   ██║██║     ╚██████╔╝██║     ██║     \n';
+    content += '  ╚═╝  ╚═══╝╚═════╝ ╚═╝  ╚═       ╚═╝   ╚═╝╚═╝      ╚═════╝ ╚═╝     ╚═╝     \n';
     content += '{/cyan-fg}\n';
 
-    // Header with date and box drawing
+    // Header with date and box drawing - always visible
     const dateHeaderText = isToday ? `Today - ${formattedDate}` : formattedDate;
     const dateHeaderWithTags = `{bold}{cyan-fg}${dateHeaderText}{/cyan-fg}{/bold}`;
     const headerWidth = 75;
     content += '┌' + '─'.repeat(headerWidth) + '┐\n';
     content += '│ ' + dateHeaderWithTags.padEnd(headerWidth - 1 + dateHeaderWithTags.length - dateHeaderText.length) + '│\n';
     content += '└' + '─'.repeat(headerWidth) + '┘\n\n';
+
+    // Handle different states
+    if (error && games.length === 0) {
+      content += `{red-fg}Error loading games: ${error}{/red-fg}\n\nPress 'r' to retry or 'n'/'p' to change date`;
+      return content;
+    }
+
+    if (games.length === 0 && !isLoading) {
+      content += `{gray-fg}No games scheduled for ${formattedDate}{/gray-fg}\n\nPress 'n'/'p' to navigate dates or 't' for today`;
+      return content;
+    }
 
     // Games list
     gameItems.forEach((gameItem, idx) => {
@@ -328,15 +316,15 @@ const Scoreboard = React.memo(({ onGameSelect }) => {
   // Memoized style based on current state
   const boxStyle = useMemo(() => {
     if (isLoading) {
-      return { fg: colors.info || 'blue', bg: 'black' };
+      return { fg: DEFAULT_COLORS.info, bg: 'black' };
     } else if (error) {
-      return { fg: colors.error || 'red', bg: 'black' };
+      return { fg: DEFAULT_COLORS.error, bg: 'black' };
     } else if (games.length === 0) {
-      return { fg: colors.info || 'blue', bg: 'black' };
+      return { fg: DEFAULT_COLORS.info, bg: 'black' };
     } else {
       return { fg: 'white', bg: 'black' };
     }
-  }, [isLoading, error, games.length, colors]);
+  }, [isLoading, error, games.length]);
   
   return React.createElement('box', {
     top: 0,

@@ -2,7 +2,6 @@
 import { configureStore } from '@reduxjs/toolkit'
 import scoreboardSlice, { selectNextGame, selectGameByIndex } from '../store/scoreboardSlice'
 import gamesSlice, { selectGame, clearSelectedGame } from '../store/gamesSlice'
-import configSlice from '../store/configSlice'
 
 describe('Application Integration', () => {
   let store
@@ -11,8 +10,7 @@ describe('Application Integration', () => {
     store = configureStore({
       reducer: {
         scoreboard: scoreboardSlice,
-        games: gamesSlice,
-        config: configSlice
+        games: gamesSlice
       },
       middleware: (getDefaultMiddleware) =>
         getDefaultMiddleware({
@@ -50,16 +48,14 @@ describe('Application Integration', () => {
 
   it('should maintain state consistency', () => {
     const state = store.getState()
-    
+
     // Check initial state structure
     expect(state.scoreboard).toBeDefined()
     expect(state.games).toBeDefined()
-    expect(state.config).toBeDefined()
-    
+
     // Check default values
     expect(state.scoreboard.games).toEqual([])
     expect(state.scoreboard.selectedIndex).toBe(0)
     expect(state.games.selectedId).toBe(null)
-    expect(state.config.favorites).toEqual([])
   })
 })

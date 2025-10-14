@@ -1,7 +1,6 @@
 const { configureStore } = require('@reduxjs/toolkit')
 const scoreboardReducer = require('./scoreboardSlice').default
 const gamesReducer = require('./gamesSlice').default
-const configReducer = require('./configSlice').default
 const { pollingMiddleware, pollingIntervalMiddleware } = require('./pollingMiddleware')
 const { createMemoryMonitoringMiddleware } = require('../utils/memoryManager')
 
@@ -66,8 +65,7 @@ const retryMiddleware = (store) => (next) => (action) => {
 const store = configureStore({
   reducer: {
     scoreboard: scoreboardReducer,
-    games: gamesReducer,
-    config: configReducer
+    games: gamesReducer
   },
   middleware: (getDefaultMiddleware) =>
     getDefaultMiddleware({

@@ -1,17 +1,16 @@
 const React = require('react');
-const { useSelector } = require('react-redux');
 const { useMemo } = React;
 
-// Import Redux selectors
-const { selectColors } = require('../store/configSlice');
+// Hardcoded default colors (no longer configurable)
+const DEFAULT_COLORS = {
+  info: 'blue'
+};
 
 /**
  * BoxScore component for displaying team statistics comparison
  * Shows formatted statistics with visual indicators for performance
  */
 const BoxScore = React.memo(({ teamStats = [] }) => {
-  // Redux state
-  const colors = useSelector(selectColors);
   
   // Memoized team statistics processing
   const processedStats = useMemo(() => {
@@ -276,10 +275,10 @@ const BoxScore = React.memo(({ teamStats = [] }) => {
   // Memoized style
   const boxStyle = useMemo(() => {
     if (!processedStats.away && !processedStats.home) {
-      return { fg: colors.info || 'blue', bg: 'black' };
+      return { fg: DEFAULT_COLORS.info, bg: 'black' };
     }
     return { fg: 'white', bg: 'black' };
-  }, [processedStats.away, processedStats.home, colors]);
+  }, [processedStats.away, processedStats.home]);
   
   return React.createElement('box', {
     top: 0,

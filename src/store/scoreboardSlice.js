@@ -1,11 +1,7 @@
-const { createSlice, createAsyncThunk, createSelector } = require('@reduxjs/toolkit')
-const { format, addDays, subDays, isToday, isAfter, isBefore, startOfDay } = require('date-fns')
+const { createSlice, createAsyncThunk } = require('@reduxjs/toolkit')
+const { format, addDays, subDays, isAfter, isBefore, startOfDay } = require('date-fns')
 const { fetchScoreboardData, mapScoreboardResponse, validateApiResponse, getApiErrorMessage, isApiErrorRetryable } = require('../services/espnApi')
-
-// NBA Season boundaries (2025-2026 season)
-// Season runs from October 2025 to June 2026
-const SEASON_START_DATE = new Date('2025-10-01')
-const SEASON_END_DATE = new Date('2026-06-30')
+const { SEASON_START_DATE, SEASON_END_DATE } = require('./constants/season')
 
 // Async thunk for fetching scoreboard data
 const fetchScoreboard = createAsyncThunk(
@@ -18,15 +14,15 @@ const fetchScoreboard = createAsyncThunk(
 
       // Fetch data from ESPN API
       const response = await fetchScoreboardData(dateObj)
-      
+
       // Validate response structure
       if (!validateApiResponse(response, 'scoreboard')) {
         throw new Error('Invalid scoreboard data received from ESPN API')
       }
-      
+
       // Map ESPN response to internal format
       const games = mapScoreboardResponse(response)
-      
+
       return {
         date: dateStr,
         games
@@ -34,7 +30,7 @@ const fetchScoreboard = createAsyncThunk(
     } catch (error) {
       const errorMessage = getApiErrorMessage(error)
       const isRetryable = isApiErrorRetryable(error)
-      
+
       return rejectWithValue({
         message: errorMessage,
         retryable: isRetryable,
@@ -89,36 +85,36 @@ const scoreboardSlice = createSlice({
       state.selectedIndex = 0
       // Don't clear games - keep previous date's games visible during loading
     },
-    
+
     // Game selection actions
     selectNextGame: (state) => {
       if (state.games.length > 0) {
         state.selectedIndex = Math.min(state.selectedIndex + 1, state.games.length - 1)
       }
     },
-    
+
     selectPreviousGame: (state) => {
       state.selectedIndex = Math.max(state.selectedIndex - 1, 0)
     },
-    
+
     selectGameByIndex: (state, action) => {
       const index = action.payload
       if (index >= 0 && index < state.games.length) {
         state.selectedIndex = index
       }
     },
-    
+
     // Clear error state
     clearError: (state) => {
       state.error = null
     },
-    
+
     // Reset selection
     resetSelection: (state) => {
       state.selectedIndex = 0
     }
   },
-  
+
   extraReducers: (builder) => {
     builder
       // Handle fetchScoreboard pending
@@ -126,7 +122,7 @@ const scoreboardSlice = createSlice({
         state.loading = true
         state.error = null
       })
-      
+
       // Handle fetchScoreboard fulfilled
       .addCase(fetchScoreboard.fulfilled, (state, action) => {
         state.loading = false
@@ -138,7 +134,7 @@ const scoreboardSlice = createSlice({
           state.selectedIndex = 0
         }
       })
-      
+
       // Handle fetchScoreboard rejected
       .addCase(fetchScoreboard.rejected, (state, action) => {
         state.loading = false
@@ -160,147 +156,10 @@ const {
   resetSelection
 } = scoreboardSlice.actions
 
-// Selectors
-const selectScoreboardState = (state) => state.scoreboard
-const selectGames = (state) => state.scoreboard.games
-const selectSelectedGame = (state) => {
-  const { games, selectedIndex } = state.scoreboard
-  return games[selectedIndex] || null
-}
-const selectSelectedGameId = (state) => {
-  const selectedGame = selectSelectedGame(state)
-  return selectedGame?.id || null
-}
-const selectCurrentDate = (state) => state.scoreboard.date
-const selectIsLoading = (state) => state.scoreboard.loading
-const selectError = (state) => state.scoreboard.error
-const selectSelectedIndex = (state) => state.scoreboard.selectedIndex
-
-// Memoized selectors for filtered and sorted game data
-const selectLiveGames = createSelector(
-  [selectGames],
-  (games) => games.filter(game => !game.status.completed)
-)
-
-const selectCompletedGames = createSelector(
-  [selectGames],
-  (games) => games.filter(game => game.status.completed)
-)
-
-const selectGamesByStatus = createSelector(
-  [selectGames],
-  (games) => {
-    const live = []
-    const scheduled = []
-    const completed = []
-    
-    games.forEach(game => {
-      if (game.status.completed) {
-        completed.push(game)
-      } else if (game.status.description === 'Scheduled') {
-        scheduled.push(game)
-      } else {
-        live.push(game)
-      }
-    })
-    
-    return { live, scheduled, completed }
-  }
-)
-
-const selectSortedGames = createSelector(
-  [selectGames],
-  (games) => {
-    return [...games].sort((a, b) => {
-      // Sort by start time
-      return new Date(a.startTime) - new Date(b.startTime)
-    })
-  }
-)
-
-// Selector to check if current date is today
-const selectIsToday = createSelector(
-  [selectCurrentDate],
-  (date) => isToday(new Date(date))
-)
-
-// Selector for formatted date string
-const selectFormattedDate = createSelector(
-  [selectCurrentDate],
-  (date) => format(new Date(date), 'EEEE, MMMM d, yyyy')
-)
-
-// Selector to check if at season start boundary
-const selectIsAtSeasonStart = createSelector(
-  [selectCurrentDate],
-  (date) => {
-    const currentDate = startOfDay(new Date(date))
-    const previousDate = subDays(currentDate, 1)
-    return isBefore(previousDate, SEASON_START_DATE)
-  }
-)
-
-// Selector to check if at season end boundary
-const selectIsAtSeasonEnd = createSelector(
-  [selectCurrentDate],
-  (date) => {
-    const currentDate = startOfDay(new Date(date))
-    const nextDate = addDays(currentDate, 1)
-    return isAfter(nextDate, SEASON_END_DATE)
-  }
-)
-
-// Memoized selector for games with enhanced data
-const selectGamesWithMetadata = createSelector(
-  [selectGames, selectCurrentDate],
-  (games, currentDate) => {
-    const currentDateObj = new Date(currentDate)
-    return games.map((game, index) => ({
-      ...game,
-      index,
-      isLive: !game.status.completed && game.status.description !== 'Scheduled',
-      isToday: isToday(new Date(game.startTime)),
-      timeUntilStart: game.status.description === 'Scheduled' ?
-        new Date(game.startTime) - currentDateObj : null,
-      displayTime: game.status.completed ? 'FINAL' :
-        game.status.description === 'Scheduled' ?
-          format(new Date(game.startTime), 'h:mm a') :
-          `${game.status.period}Q ${game.status.displayClock || ''}`
-    }))
-  }
-)
-
-// Optimized selector for games by priority (live first, then scheduled, then completed)
-const selectGamesByPriority = createSelector(
-  [selectGamesWithMetadata],
-  (games) => {
-    const live = []
-    const scheduled = []
-    const completed = []
-    
-    games.forEach(game => {
-      if (game.isLive) {
-        live.push(game)
-      } else if (game.status.description === 'Scheduled') {
-        scheduled.push(game)
-      } else {
-        completed.push(game)
-      }
-    })
-    
-    // Sort each category
-    live.sort((a, b) => new Date(a.startTime) - new Date(b.startTime))
-    scheduled.sort((a, b) => new Date(a.startTime) - new Date(b.startTime))
-    completed.sort((a, b) => new Date(b.startTime) - new Date(a.startTime)) // Most recent first
-    
-    return [...live, ...scheduled, ...completed]
-  }
-)
-
 // Export the reducer as default
 module.exports = scoreboardSlice.reducer
 
-// Export named exports
+// Export named exports - actions
 module.exports.fetchScoreboard = fetchScoreboard
 module.exports.navigateToNextDay = navigateToNextDay
 module.exports.navigateToPreviousDay = navigateToPreviousDay
@@ -310,21 +169,7 @@ module.exports.selectPreviousGame = selectPreviousGame
 module.exports.selectGameByIndex = selectGameByIndex
 module.exports.clearError = clearError
 module.exports.resetSelection = resetSelection
-module.exports.selectScoreboardState = selectScoreboardState
-module.exports.selectGames = selectGames
-module.exports.selectSelectedGame = selectSelectedGame
-module.exports.selectSelectedGameId = selectSelectedGameId
-module.exports.selectCurrentDate = selectCurrentDate
-module.exports.selectIsLoading = selectIsLoading
-module.exports.selectError = selectError
-module.exports.selectSelectedIndex = selectSelectedIndex
-module.exports.selectLiveGames = selectLiveGames
-module.exports.selectCompletedGames = selectCompletedGames
-module.exports.selectGamesByStatus = selectGamesByStatus
-module.exports.selectSortedGames = selectSortedGames
-module.exports.selectIsToday = selectIsToday
-module.exports.selectFormattedDate = selectFormattedDate
-module.exports.selectIsAtSeasonStart = selectIsAtSeasonStart
-module.exports.selectIsAtSeasonEnd = selectIsAtSeasonEnd
-module.exports.selectGamesWithMetadata = selectGamesWithMetadata
-module.exports.selectGamesByPriority = selectGamesByPriority
+
+// Export selectors
+const selectors = require('./selectors/scoreboardSelectors')
+Object.assign(module.exports, selectors)

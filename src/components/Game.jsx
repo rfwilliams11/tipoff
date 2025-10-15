@@ -139,7 +139,7 @@ const Game = React.memo(({ gameId, onBackToScoreboard }) => {
     }
 
     lines.push(`${'-'.repeat(75)}`)
-    lines.push('{cyan-fg}Keys:{/cyan-fg} {bold}c{/bold}=Scoreboard {bold}↑↓{/bold}=Scroll {bold}q{/bold}=Quit')
+    lines.push('{cyan-fg}Keys:{/cyan-fg} {bold}c{/bold}=Scoreboard {bold}q{/bold}=Quit')
 
     return lines.join('\n')
   }, [isLoading, error, selectedGame, gameStatus])

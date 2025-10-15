@@ -26,11 +26,11 @@ const store = configureStore({
       // Enable immutability check in development
       immutableCheck: process.env.NODE_ENV !== 'production'
     })
-    .concat(errorHandlingMiddleware)
-    .concat(retryMiddleware)
-    .concat(pollingMiddleware)
-    .concat(pollingIntervalMiddleware)
-    .concat(createMemoryMonitoringMiddleware()),
+      .concat(errorHandlingMiddleware)
+      .concat(retryMiddleware)
+      .concat(pollingMiddleware)
+      .concat(pollingIntervalMiddleware)
+      .concat(createMemoryMonitoringMiddleware()),
 
   // Enable Redux DevTools in development
   devTools: process.env.NODE_ENV !== 'production'

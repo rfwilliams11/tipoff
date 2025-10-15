@@ -18,7 +18,7 @@ class PollingManager {
 
   startPolling(gameId, pollFunction, getInterval, options = {}) {
     this.stopPolling(gameId)
-    
+
     if (this.isShuttingDown) {
       return
     }
@@ -39,23 +39,23 @@ class PollingManager {
       try {
         // Execute the polling function
         const result = await pollFunction(gameId)
-        
+
         // Reset failure count on success
         this.pollFailures.set(gameId, 0)
-        
+
         // Call success callback
         onSuccess(result)
-        
+
         // Determine next polling interval
         const interval = getInterval(result)
-        
+
         if (interval === null) {
           // Stop polling (e.g., game finished)
           this.stopPolling(gameId)
           onStop('completed')
           return
         }
-        
+
         // Schedule next poll
         const timeoutId = setTimeout(poll, interval)
         this.activePolls.set(gameId, {
@@ -64,25 +64,25 @@ class PollingManager {
           lastPoll: Date.now(),
           failures: this.pollFailures.get(gameId) || 0
         })
-        
+
       } catch (error) {
         // Increment failure count
         const failures = (this.pollFailures.get(gameId) || 0) + 1
         this.pollFailures.set(gameId, failures)
-        
+
         // Call error callback
         onError(error, failures)
-        
+
         if (failures >= maxFailures) {
           this.stopPolling(gameId)
           onStop('max_failures')
           return
         }
-        
+
         // Continue polling with exponential backoff on failure
         const backoffDelay = Math.min(1000 * Math.pow(2, failures - 1), 30000)
         const timeoutId = setTimeout(poll, backoffDelay)
-        
+
         this.activePolls.set(gameId, {
           timeoutId,
           interval: backoffDelay,
@@ -155,46 +155,46 @@ const getPollingInterval = (gameData) => {
   }
 
   const status = gameData.gameData.status
-  
+
   // Game is finished
   if (status.completed) {
     return POLLING_INTERVALS.FINAL
   }
-  
+
   // Determine interval based on game state
   const description = status.description?.toLowerCase() || ''
-  
-  if (description.includes('halftime') || 
-      description.includes('timeout') || 
+
+  if (description.includes('halftime') ||
+      description.includes('timeout') ||
       description.includes('break')) {
     return POLLING_INTERVALS.HALFTIME
   }
-  
-  if (description.includes('scheduled') || 
+
+  if (description.includes('scheduled') ||
       description.includes('pre') ||
       status.period === 0) {
     return POLLING_INTERVALS.SCHEDULED
   }
-  
+
   // Game is live (in progress)
   if (status.period > 0 && !status.completed) {
     return POLLING_INTERVALS.LIVE_GAME
   }
-  
+
   return POLLING_INTERVALS.DEFAULT
 }
 
 const startGamePolling = (gameId, dispatch, pollAction, options = {}) => {
   const pollFunction = async (id) => {
     const result = await dispatch(pollAction(id))
-    
+
     // Handle both fulfilled and rejected results
     if (result.type.endsWith('/fulfilled')) {
       return result.payload
     } else if (result.type.endsWith('/rejected')) {
       throw new Error(result.payload?.message || 'Polling failed')
     }
-    
+
     return result.payload
   }
 

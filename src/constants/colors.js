@@ -7,8 +7,8 @@ const DEFAULT_COLORS = {
   error: 'red',
   info: 'blue',
   background: 'black'
-};
+}
 
 module.exports = {
   DEFAULT_COLORS
-};
+}

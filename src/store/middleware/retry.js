@@ -1,4 +1,6 @@
 // Enhanced middleware for async action retry logic
+const logger = require('../../utils/logger')
+
 const retryMiddleware = (store) => (next) => (action) => {
   // Handle retry logic for failed async actions
   if (action.type.endsWith('/rejected') && action.payload?.retryable) {
@@ -11,7 +13,7 @@ const retryMiddleware = (store) => (next) => (action) => {
       const jitter = baseDelay * 0.1 * Math.random()
       const delay = Math.min(baseDelay + jitter, 30000) // Max 30 seconds
 
-      console.warn(`Retrying failed action ${action.type} (attempt ${retryCount + 1}/${maxRetries}) in ${Math.round(delay)}ms`)
+      logger.warn(`Retrying failed action ${action.type} (attempt ${retryCount + 1}/${maxRetries}) in ${Math.round(delay)}ms`)
 
       setTimeout(() => {
         // Reconstruct the original action with retry metadata
@@ -33,7 +35,7 @@ const retryMiddleware = (store) => (next) => (action) => {
         }
       }, delay)
     } else {
-      console.error(`Max retries (${maxRetries}) exceeded for action ${action.type}`)
+      logger.error(`Max retries (${maxRetries}) exceeded for action ${action.type}`)
     }
   }
 

@@ -6,6 +6,7 @@ const screenManager = require('./screen');
 const { initializePollingService, cleanupPollingService } = require('./services/pollingService');
 const store = require('./store').default;
 const App = require('./components/App.jsx');
+const logger = require('./utils/logger');
 
 raf.polyfill();
 
@@ -54,11 +55,9 @@ class Application {
   initializePollingService() {
     try {
       initializePollingService();
-      if (process.env.NODE_ENV === 'development') {
-        console.log('Polling service initialized');
-      }
+      logger.info('Polling service initialized');
     } catch (error) {
-      console.warn('Failed to initialize polling service:', error.message);
+      logger.warn('Failed to initialize polling service:', error.message);
     }
   }
 
@@ -93,12 +92,12 @@ class Application {
     });
 
     process.on('SIGINT', () => {
-      console.log('\nReceived SIGINT, shutting down gracefully...');
+      logger.info('\nReceived SIGINT, shutting down gracefully...');
       this.shutdown();
     });
 
     process.on('SIGTERM', () => {
-      console.log('\nReceived SIGTERM, shutting down gracefully...');
+      logger.info('\nReceived SIGTERM, shutting down gracefully...');
       this.shutdown();
     });
   }
@@ -140,16 +139,16 @@ class Application {
       return;
     }
 
-    console.log('Shutting down application...');
+    logger.info('Shutting down application...');
     this.isRunning = false;
 
     try {
       cleanupPollingService();
       screenManager.cleanup();
-      console.log('Application shutdown complete');
+      logger.info('Application shutdown complete');
       process.exit(0);
     } catch (error) {
-      console.error('Error during shutdown:', error.message);
+      logger.error('Error during shutdown:', error.message);
       process.exit(1);
     }
   }

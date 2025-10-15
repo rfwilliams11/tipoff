@@ -3,7 +3,8 @@
  */
 
 const { startGamePolling, stopGamePolling, stopAllGamePolling, getPollingInterval, isGamePolling } = require('../services/pollingService')
-const { pollGameUpdates, startPolling, stopPolling, updatePollingInterval } = require('./gamesSlice')
+const { pollGameUpdates, startPolling, stopPolling, stopAllPolling, updatePollingInterval } = require('./gamesSlice')
+const logger = require('../utils/logger')
 
 /**
  * Middleware to handle automatic polling based on Redux actions
@@ -16,7 +17,7 @@ const pollingMiddleware = (store) => (next) => (action) => {
   if (action.type === 'games/selectGame') {
     const gameId = action.payload
     const game = state.games.games[gameId]
-    
+
     if (game && !game.gameData.status.completed) {
       // Start polling for the selected game
       startGamePolling(gameId, store.dispatch, pollGameUpdates, {
@@ -27,14 +28,14 @@ const pollingMiddleware = (store) => (next) => (action) => {
             store.dispatch(updatePollingInterval({ gameId, interval: newInterval }))
           }
         },
-        onError: (error, failures) => {
+        onError: (_error, _failures) => {
           // Silent error handling
         },
-        onStop: (reason) => {
+        onStop: (_reason) => {
           store.dispatch(stopPolling(gameId))
         }
       })
-      
+
       // Update Redux state to track polling
       const initialInterval = getPollingInterval(game)
       if (initialInterval !== null) {
@@ -55,7 +56,7 @@ const pollingMiddleware = (store) => (next) => (action) => {
   // Handle successful game detail fetch - start polling if game is live
   if (action.type === 'games/fetchGameDetail/fulfilled') {
     const { gameId, gameData } = action.payload
-    
+
     if (gameData && !gameData.gameData.status.completed && state.games.selectedId === gameId) {
       // Only start polling if this is the currently selected game
       if (!isGamePolling(gameId)) {
@@ -67,13 +68,13 @@ const pollingMiddleware = (store) => (next) => (action) => {
             }
           },
           onError: (error, failures) => {
-            console.warn(`Polling error for game ${gameId} (failure ${failures}):`, error.message)
+            logger.warn(`Polling error for game ${gameId} (failure ${failures}):`, error.message)
           },
-          onStop: (reason) => {
+          onStop: (_reason) => {
             store.dispatch(stopPolling(gameId))
           }
         })
-        
+
         const initialInterval = getPollingInterval(gameData)
         if (initialInterval !== null) {
           store.dispatch(startPolling({ gameId, interval: initialInterval }))
@@ -86,7 +87,7 @@ const pollingMiddleware = (store) => (next) => (action) => {
   if (action.type === 'games/startPolling') {
     const { gameId } = action.payload
     const game = state.games.games[gameId]
-    
+
     if (game && !isGamePolling(gameId)) {
       startGamePolling(gameId, store.dispatch, pollGameUpdates, {
         onSuccess: (gameData) => {
@@ -95,10 +96,10 @@ const pollingMiddleware = (store) => (next) => (action) => {
             store.dispatch(updatePollingInterval({ gameId, interval: newInterval }))
           }
         },
-        onError: (error, failures) => {
+        onError: (_error, _failures) => {
           // Silent error handling
         },
-        onStop: (reason) => {
+        onStop: (_reason) => {
           store.dispatch(stopPolling(gameId))
         }
       })
@@ -146,16 +147,16 @@ const pollingIntervalMiddleware = (store) => (next) => (action) => {
   // Handle successful polling updates - check if interval should change
   if (action.type === 'games/pollGameUpdates/fulfilled') {
     const { gameId, updates } = action.payload || {}
-    
+
     if (gameId && updates && isGamePolling(gameId)) {
       const currentInterval = store.getState().games.pollingIntervals[gameId]
       const newInterval = getPollingInterval(updates)
-      
+
       if (newInterval === null) {
         // Game finished, polling will be stopped by the polling service
         return result
       }
-      
+
       if (newInterval !== currentInterval) {
         // Update polling interval
         store.dispatch(updatePollingInterval({ gameId, interval: newInterval }))

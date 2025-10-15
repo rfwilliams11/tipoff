@@ -1,26 +1,26 @@
-const { useEffect } = require('react');
-const screenManager = require('../screen');
+const { useEffect } = require('react')
+const screenManager = require('../screen')
 
 const useKeyboardNavigation = (handlers) => {
   useEffect(() => {
-    const screen = screenManager.getScreen();
-    if (!screen) return;
+    const screen = screenManager.getScreen()
+    if (!screen) return
 
     const handleKeys = (ch, key) => {
-      if (!key) return;
+      if (!key) return
 
-      const handler = handlers[key.name];
+      const handler = handlers[key.name]
       if (handler) {
-        handler(key);
+        handler(key)
       }
-    };
+    }
 
-    screen.on('keypress', handleKeys);
+    screen.on('keypress', handleKeys)
 
     return () => {
-      screen.removeListener('keypress', handleKeys);
-    };
-  }, [handlers]);
-};
+      screen.removeListener('keypress', handleKeys)
+    }
+  }, [handlers])
+}
 
-module.exports = { useKeyboardNavigation };
+module.exports = { useKeyboardNavigation }

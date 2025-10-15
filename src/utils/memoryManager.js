@@ -20,11 +20,11 @@ const MEMORY_LIMITS = {
 const calculateMemoryUsage = (gamesState) => {
   const games = gamesState.games || {}
   const gameIds = Object.keys(games)
-  
+
   let totalPlays = 0
   let totalGameData = 0
   let activePollingGames = 0
-  
+
   gameIds.forEach(gameId => {
     const game = games[gameId]
     if (game) {
@@ -32,17 +32,17 @@ const calculateMemoryUsage = (gamesState) => {
       if (game.liveData && game.liveData.plays) {
         totalPlays += game.liveData.plays.length
       }
-      
+
       // Estimate game data size (rough calculation)
       totalGameData += JSON.stringify(game).length
-      
+
       // Count active polling games
       if (gamesState.pollingIntervals && gamesState.pollingIntervals[gameId]) {
         activePollingGames++
       }
     }
   })
-  
+
   return {
     totalGames: gameIds.length,
     totalPlays,
@@ -69,33 +69,33 @@ const getGamesForCleanup = (gamesState, activeGameIds = []) => {
   const games = gamesState.games || {}
   const pollingIntervals = gamesState.pollingIntervals || {}
   const lastPolled = gamesState.lastPolled || {}
-  
+
   const gameIds = Object.keys(games)
   const currentTime = new Date()
-  
+
   // Categorize games
   const gameCategories = {
     active: [], // Currently being polled
     recent: [], // Recently accessed
     old: []     // Can be cleaned up
   }
-  
+
   gameIds.forEach(gameId => {
     const game = games[gameId]
     if (!game) return
-    
+
     // Keep if explicitly marked as active
     if (activeGameIds.includes(gameId)) {
       gameCategories.active.push(gameId)
       return
     }
-    
+
     // Keep if currently being polled
     if (pollingIntervals[gameId]) {
       gameCategories.active.push(gameId)
       return
     }
-    
+
     // Keep if recently accessed (within last hour)
     const lastAccess = lastPolled[gameId] || game.lastUpdated
     if (lastAccess) {
@@ -105,7 +105,7 @@ const getGamesForCleanup = (gamesState, activeGameIds = []) => {
         return
       }
     }
-    
+
     // Mark for cleanup
     gameCategories.old.push({
       gameId,
@@ -113,10 +113,10 @@ const getGamesForCleanup = (gamesState, activeGameIds = []) => {
       playsCount: game.liveData?.plays?.length || 0
     })
   })
-  
+
   // Sort old games by last access time (oldest first)
   gameCategories.old.sort((a, b) => new Date(a.lastAccess) - new Date(b.lastAccess))
-  
+
   return {
     categories: gameCategories,
     toCleanup: gameCategories.old.map(item => item.gameId)
@@ -132,7 +132,7 @@ const getGamesForCleanup = (gamesState, activeGameIds = []) => {
 const createCleanupStrategy = (gamesState, activeGameIds = []) => {
   const memoryUsage = calculateMemoryUsage(gamesState)
   const cleanupAnalysis = getGamesForCleanup(gamesState, activeGameIds)
-  
+
   const strategy = {
     shouldCleanup: false,
     actions: [],
@@ -142,24 +142,24 @@ const createCleanupStrategy = (gamesState, activeGameIds = []) => {
       estimatedMemory: 0
     }
   }
-  
+
   // Determine if cleanup is needed
   if (memoryUsage.warnings.shouldCleanup) {
     strategy.shouldCleanup = true
-    
+
     // Calculate how many games to remove
     const excessGames = Math.max(0, memoryUsage.totalGames - MEMORY_LIMITS.MAX_GAMES)
     const gamesToRemove = Math.min(excessGames + 2, cleanupAnalysis.toCleanup.length) // Remove a few extra
-    
+
     if (gamesToRemove > 0) {
       const gamesToCleanup = cleanupAnalysis.toCleanup.slice(0, gamesToRemove)
-      
+
       strategy.actions.push({
         type: 'REMOVE_GAMES',
         gameIds: gamesToCleanup,
         reason: 'Exceeded game limit'
       })
-      
+
       // Calculate expected savings
       gamesToCleanup.forEach(gameId => {
         const game = gamesState.games[gameId]
@@ -172,7 +172,7 @@ const createCleanupStrategy = (gamesState, activeGameIds = []) => {
       })
     }
   }
-  
+
   // Check for play history limits
   Object.keys(gamesState.games || {}).forEach(gameId => {
     const game = gamesState.games[gameId]
@@ -186,17 +186,17 @@ const createCleanupStrategy = (gamesState, activeGameIds = []) => {
           targetPlays: MEMORY_LIMITS.MAX_PLAYS_PER_GAME,
           reason: 'Exceeded play history limit'
         })
-        
+
         strategy.expectedSavings.plays += excessPlays
       }
     }
   })
-  
+
   // Estimate memory savings (rough calculation)
   strategy.expectedSavings.estimatedMemory = Math.round(
     (strategy.expectedSavings.games * 50 + strategy.expectedSavings.plays * 0.5) // KB
   )
-  
+
   return strategy
 }
 
@@ -207,7 +207,7 @@ const createCleanupStrategy = (gamesState, activeGameIds = []) => {
  */
 const logMemoryUsage = (memoryUsage, context = '') => {
   const prefix = context ? `[${context}] ` : ''
-  
+
   console.log(`${prefix}Memory Usage:`, {
     games: `${memoryUsage.totalGames}/${memoryUsage.limits.MAX_GAMES}`,
     plays: `${memoryUsage.totalPlays}/${memoryUsage.limits.MAX_TOTAL_PLAYS}`,
@@ -224,33 +224,33 @@ const logMemoryUsage = (memoryUsage, context = '') => {
  */
 const createMemoryMonitoringMiddleware = () => {
   let lastCleanup = 0
-  
+
   return (store) => (next) => (action) => {
     const result = next(action)
-    
+
     // Monitor memory after certain actions
-    if (action.type.includes('games/') && 
+    if (action.type.includes('games/') &&
         (action.type.includes('fulfilled') || action.type.includes('cleanup'))) {
-      
+
       const state = store.getState()
       const memoryUsage = calculateMemoryUsage(state.games)
-      
+
       // Log warnings if approaching limits
       if (memoryUsage.warnings.gamesNearLimit || memoryUsage.warnings.playsNearLimit) {
         logMemoryUsage(memoryUsage, 'WARNING')
       }
-      
+
       // Trigger automatic cleanup if needed
       const now = Date.now()
-      if (memoryUsage.warnings.shouldCleanup && 
+      if (memoryUsage.warnings.shouldCleanup &&
           (now - lastCleanup) > MEMORY_LIMITS.CLEANUP_INTERVAL) {
-        
+
         console.log('Triggering automatic memory cleanup...')
         store.dispatch({ type: 'games/performMemoryCleanup' })
         lastCleanup = now
       }
     }
-    
+
     return result
   }
 }

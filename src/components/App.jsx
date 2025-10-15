@@ -1,11 +1,11 @@
-const React = require('react');
-const { useSelector, useDispatch } = require('react-redux');
-const { useEffect, useState, useCallback } = React;
+const React = require('react')
+const { useSelector, useDispatch } = require('react-redux')
+const { useEffect, useState, useCallback } = React
 
 // Import components
-const Scoreboard = require('./Scoreboard.jsx');
-const Game = require('./Game.jsx');
-const SplashScreen = require('./SplashScreen.jsx');
+const Scoreboard = require('./Scoreboard.jsx')
+const Game = require('./Game.jsx')
+const SplashScreen = require('./SplashScreen.jsx')
 
 // Import Redux actions and selectors
 const {
@@ -14,134 +14,134 @@ const {
   navigateToNextDay,
   navigateToPreviousDay,
   navigateToToday
-} = require('../store/scoreboardSlice');
+} = require('../store/scoreboardSlice')
 
 const {
   selectGame,
   clearSelectedGame,
   selectSelectedGameId: selectGamesSelectedGameId,
   selectSelectedGame
-} = require('../store/gamesSlice');
+} = require('../store/gamesSlice')
 
-const screenManager = require('../screen');
+const screenManager = require('../screen')
 
 const App = React.memo(() => {
-  const dispatch = useDispatch();
-  
+  const dispatch = useDispatch()
+
   // Redux state
-  const scoreboardState = useSelector(selectScoreboardState);
-  const gamesSelectedGameId = useSelector(selectGamesSelectedGameId);
-  const selectedGame = useSelector(selectSelectedGame);
-  
+  const scoreboardState = useSelector(selectScoreboardState)
+  const gamesSelectedGameId = useSelector(selectGamesSelectedGameId)
+  const selectedGame = useSelector(selectSelectedGame)
+
   // Local view state
-  const [currentView, setCurrentView] = useState('scoreboard');
-  const [showSplash, setShowSplash] = useState(true);
-  
+  const [currentView, setCurrentView] = useState('scoreboard')
+  const [showSplash, setShowSplash] = useState(true)
+
   // Initialize application on mount
   useEffect(() => {
     // Initial scoreboard fetch will be triggered by the auto-fetch effect
-  }, [dispatch]);
-  
+  }, [dispatch])
+
   // Handle splash screen completion
   const handleSplashComplete = useCallback(() => {
-    setShowSplash(false);
-  }, []);
+    setShowSplash(false)
+  }, [])
 
   // Handle view switching
   const switchToScoreboard = useCallback(() => {
-    setCurrentView('scoreboard');
-    dispatch(clearSelectedGame());
-  }, [dispatch]);
-  
+    setCurrentView('scoreboard')
+    dispatch(clearSelectedGame())
+  }, [dispatch])
+
   const switchToGame = useCallback((gameId) => {
     if (gameId) {
-      dispatch(selectGame(gameId));
-      setCurrentView('game');
+      dispatch(selectGame(gameId))
+      setCurrentView('game')
     }
-  }, [dispatch]);
-  
+  }, [dispatch])
+
   // Handle global keyboard shortcuts
   useEffect(() => {
-    const screen = screenManager.getScreen();
-    if (!screen) return;
+    const screen = screenManager.getScreen()
+    if (!screen) return
 
     const handleGlobalKeys = (ch, key) => {
-      if (!key) return;
+      if (!key) return
 
       switch (key.name) {
         case 'c':
           // Return to scoreboard view
-          switchToScoreboard();
-          break;
+          switchToScoreboard()
+          break
 
         case 'n':
           // Navigate to next day (only in scoreboard view)
           if (currentView === 'scoreboard') {
-            dispatch(navigateToNextDay());
+            dispatch(navigateToNextDay())
             // fetchScoreboard will be called automatically by the date change effect
           }
-          break;
+          break
 
         case 'p':
           // Navigate to previous day (only in scoreboard view)
           if (currentView === 'scoreboard') {
-            dispatch(navigateToPreviousDay());
+            dispatch(navigateToPreviousDay())
             // fetchScoreboard will be called automatically by the date change effect
           }
-          break;
+          break
 
         case 't':
           // Navigate to today (only in scoreboard view)
           if (currentView === 'scoreboard') {
-            dispatch(navigateToToday());
+            dispatch(navigateToToday())
             // fetchScoreboard will be called automatically by the date change effect
           }
-          break;
+          break
       }
-    };
+    }
 
     // Register global key handler with once flag to prevent double firing
-    screen.on('keypress', handleGlobalKeys);
+    screen.on('keypress', handleGlobalKeys)
 
     // Cleanup
     return () => {
-      screen.removeListener('keypress', handleGlobalKeys);
-    };
+      screen.removeListener('keypress', handleGlobalKeys)
+    }
   }, [
     currentView,
     dispatch,
     switchToScoreboard
-  ]);
-  
+  ])
+
   // Auto-fetch scoreboard when date changes
   useEffect(() => {
     if (currentView === 'scoreboard') {
-      dispatch(fetchScoreboard(scoreboardState.date));
+      dispatch(fetchScoreboard(scoreboardState.date))
     }
-  }, [scoreboardState.date, currentView, dispatch]);
+  }, [scoreboardState.date, currentView, dispatch])
 
   // Auto-poll scoreboard every 60 seconds when in scoreboard view
   useEffect(() => {
     if (currentView === 'scoreboard') {
       // Set up polling interval (60 seconds)
       const pollInterval = setInterval(() => {
-        dispatch(fetchScoreboard(scoreboardState.date));
-      }, 60000); // 60 seconds
+        dispatch(fetchScoreboard(scoreboardState.date))
+      }, 60000) // 60 seconds
 
       // Cleanup function
       return () => {
-        clearInterval(pollInterval);
-      };
+        clearInterval(pollInterval)
+      }
     }
-  }, [currentView, scoreboardState.date, dispatch]);
-  
+  }, [currentView, scoreboardState.date, dispatch])
+
   // Render current view
   const renderCurrentView = () => {
     // Show splash screen on first load
     if (showSplash) {
       return React.createElement(SplashScreen, {
         onComplete: handleSplashComplete
-      });
+      })
     }
 
     switch (currentView) {
@@ -150,7 +150,7 @@ const App = React.memo(() => {
           return React.createElement(Game, {
             gameId: gamesSelectedGameId,
             onBackToScoreboard: switchToScoreboard
-          });
+          })
         }
         // Fall through to scoreboard if no game selected
 
@@ -158,16 +158,16 @@ const App = React.memo(() => {
       default:
         return React.createElement(Scoreboard, {
           onGameSelect: switchToGame
-        });
+        })
     }
-  };
-  
+  }
+
   // Memoized app container style
   const appStyle = React.useMemo(() => ({
     fg: 'white',
     bg: 'black'
-  }), []);
-  
+  }), [])
+
   // Main app container
   return React.createElement('box', {
     top: 0,
@@ -175,7 +175,7 @@ const App = React.memo(() => {
     width: '100%',
     height: '100%',
     style: appStyle
-  }, renderCurrentView());
-});
+  }, renderCurrentView())
+})
 
-module.exports = App;
+module.exports = App

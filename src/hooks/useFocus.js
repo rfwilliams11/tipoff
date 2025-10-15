@@ -1,7 +1,7 @@
-const { useEffect, useCallback } = require('react');
-const { globalFocusManager } = require('../utils/navigation');
-const { useCallbackRefs } = require('./utils/useCallbackRef');
-const { createListNavigationHandler, createScrollNavigationHandler } = require('./utils/navigationHandlers');
+const { useEffect, useCallback } = require('react')
+const { globalFocusManager } = require('../utils/navigation')
+const { useCallbackRefs } = require('./utils/useCallbackRef')
+const { createListNavigationHandler, createScrollNavigationHandler } = require('./utils/navigationHandlers')
 
 const useFocus = (id, options = {}) => {
   const {
@@ -11,65 +11,65 @@ const useFocus = (id, options = {}) => {
     tabIndex = 0,
     disabled = false,
     autoFocus = false
-  } = options;
+  } = options
 
-  const callbackRefs = useCallbackRefs({ onFocus, onBlur, onNavigate });
+  const callbackRefs = useCallbackRefs({ onFocus, onBlur, onNavigate })
 
-  const hasFocus = globalFocusManager.hasFocus(id);
+  const hasFocus = globalFocusManager.hasFocus(id)
 
   const focus = useCallback(() => {
-    return globalFocusManager.focus(id);
-  }, [id]);
+    return globalFocusManager.focus(id)
+  }, [id])
 
   const blur = useCallback(() => {
     if (hasFocus) {
-      globalFocusManager.blur();
+      globalFocusManager.blur()
     }
-  }, [hasFocus]);
+  }, [hasFocus])
 
   const navigate = useCallback((direction, data) => {
-    return globalFocusManager.navigate(direction, data);
-  }, []);
+    return globalFocusManager.navigate(direction, data)
+  }, [])
 
   useEffect(() => {
     const element = {
       onFocus: () => {
         if (callbackRefs.onFocus.current) {
-          callbackRefs.onFocus.current();
+          callbackRefs.onFocus.current()
         }
       },
       onBlur: () => {
         if (callbackRefs.onBlur.current) {
-          callbackRefs.onBlur.current();
+          callbackRefs.onBlur.current()
         }
       },
       onNavigate: (direction, data) => {
         if (callbackRefs.onNavigate.current) {
-          return callbackRefs.onNavigate.current(direction, data);
+          return callbackRefs.onNavigate.current(direction, data)
         }
-        return false;
+        return false
       },
       tabIndex,
       disabled
-    };
+    }
 
-    globalFocusManager.register(id, element);
+    globalFocusManager.register(id, element)
 
     if (autoFocus && !disabled) {
-      globalFocusManager.focus(id);
+      globalFocusManager.focus(id)
     }
 
     return () => {
-      globalFocusManager.unregister(id);
-    };
-  }, [id, tabIndex, disabled, autoFocus, callbackRefs]);
+      globalFocusManager.unregister(id)
+    }
+  }, [id, tabIndex, disabled, autoFocus, callbackRefs])
 
   useEffect(() => {
-    const element = globalFocusManager.focusableElements.get(id);
+    const element = globalFocusManager.focusableElements.get(id)
     if (element) {
-      element.disabled = disabled;
+      element.disabled = disabled
     }
-  }, [id, disabled]);
+  }, [id, disabled])
 
   return {
     hasFocus,
@@ -77,8 +77,8 @@ const useFocus = (id, options = {}) => {
     blur,
     navigate,
     disabled
-  };
-};
+  }
+}
 
 const useListFocus = (id, items, options = {}) => {
   const {
@@ -87,9 +87,9 @@ const useListFocus = (id, items, options = {}) => {
     onItemActivate,
     wrap = true,
     pageSize = 10
-  } = options;
+  } = options
 
-  const callbackRefs = useCallbackRefs({ onSelectionChange, onItemActivate });
+  const callbackRefs = useCallbackRefs({ onSelectionChange, onItemActivate })
 
   const handleNavigate = useCallback((direction, data) => {
     const handler = createListNavigationHandler(
@@ -100,32 +100,32 @@ const useListFocus = (id, items, options = {}) => {
         pageSize,
         onSelectionChange: (newIndex) => {
           if (callbackRefs.onSelectionChange.current) {
-            callbackRefs.onSelectionChange.current(newIndex);
+            callbackRefs.onSelectionChange.current(newIndex)
           }
         }
       }
-    );
-    return handler(direction);
-  }, [selectedIndex, items.length, wrap, pageSize, callbackRefs]);
+    )
+    return handler(direction)
+  }, [selectedIndex, items.length, wrap, pageSize, callbackRefs])
 
   const handleActivate = useCallback(() => {
     if (selectedIndex >= 0 && selectedIndex < items.length && callbackRefs.onItemActivate.current) {
-      callbackRefs.onItemActivate.current(selectedIndex, items[selectedIndex]);
+      callbackRefs.onItemActivate.current(selectedIndex, items[selectedIndex])
     }
-  }, [selectedIndex, items, callbackRefs]);
+  }, [selectedIndex, items, callbackRefs])
 
   const focusUtils = useFocus(id, {
     onNavigate: handleNavigate,
     ...options
-  });
+  })
 
   return {
     ...focusUtils,
     selectedIndex,
     handleNavigate,
     handleActivate
-  };
-};
+  }
+}
 
 const useScrollFocus = (id, options = {}) => {
   const {
@@ -134,9 +134,9 @@ const useScrollFocus = (id, options = {}) => {
     viewportHeight = 10,
     onScrollChange,
     scrollStep = 1
-  } = options;
+  } = options
 
-  const callbackRefs = useCallbackRefs({ onScrollChange });
+  const callbackRefs = useCallbackRefs({ onScrollChange })
 
   const handleNavigate = useCallback((direction, data) => {
     const handler = createScrollNavigationHandler(
@@ -147,28 +147,28 @@ const useScrollFocus = (id, options = {}) => {
         scrollStep,
         onScrollChange: (newPosition) => {
           if (callbackRefs.onScrollChange.current) {
-            callbackRefs.onScrollChange.current(newPosition);
+            callbackRefs.onScrollChange.current(newPosition)
           }
         }
       }
-    );
-    return handler(direction);
-  }, [scrollPosition, contentHeight, viewportHeight, scrollStep, callbackRefs]);
+    )
+    return handler(direction)
+  }, [scrollPosition, contentHeight, viewportHeight, scrollStep, callbackRefs])
 
   const focusUtils = useFocus(id, {
     onNavigate: handleNavigate,
     ...options
-  });
+  })
 
   return {
     ...focusUtils,
     scrollPosition,
     handleNavigate
-  };
-};
+  }
+}
 
 module.exports = {
   useFocus,
   useListFocus,
   useScrollFocus
-};
+}

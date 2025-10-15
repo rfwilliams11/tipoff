@@ -31,35 +31,35 @@ const requestTracker = {
 }
 
 const classifyError = (error) => {
-  if (error.code === 'ENOTFOUND' || 
-      error.code === 'ECONNREFUSED' || 
+  if (error.code === 'ENOTFOUND' ||
+      error.code === 'ECONNREFUSED' ||
       error.code === 'ENETUNREACH' ||
       error.code === 'EHOSTUNREACH') {
     return ERROR_TYPES.NETWORK
   }
-  
+
   // Timeout errors
   if (error.code === 'ECONNABORTED' || error.code === 'ETIMEDOUT') {
     return ERROR_TYPES.TIMEOUT
   }
-  
+
   // HTTP response errors
   if (error.response?.status) {
     const status = error.response.status
-    
+
     if (status === 429) {
       return ERROR_TYPES.RATE_LIMITED
     }
-    
+
     if (status >= 500) {
       return ERROR_TYPES.SERVER_ERROR
     }
-    
+
     if (status >= 400) {
       return ERROR_TYPES.CLIENT_ERROR
     }
   }
-  
+
   return ERROR_TYPES.UNKNOWN
 }
 
@@ -67,16 +67,16 @@ const isRetryableError = (error, attemptCount = 0) => {
   if (attemptCount >= RETRY_CONFIG.maxRetries) {
     return false
   }
-  
+
   const errorType = classifyError(error)
-  
+
   switch (errorType) {
     case ERROR_TYPES.NETWORK:
     case ERROR_TYPES.TIMEOUT:
     case ERROR_TYPES.SERVER_ERROR:
     case ERROR_TYPES.RATE_LIMITED:
       return true
-    
+
     case ERROR_TYPES.CLIENT_ERROR:
     case ERROR_TYPES.UNKNOWN:
     default:
@@ -86,7 +86,7 @@ const isRetryableError = (error, attemptCount = 0) => {
 
 const calculateRetryDelay = (attemptCount, error) => {
   const errorType = classifyError(error)
-  
+
   // Special handling for rate limiting
   if (errorType === ERROR_TYPES.RATE_LIMITED) {
     const retryAfter = error.response?.headers?.['retry-after']
@@ -95,40 +95,40 @@ const calculateRetryDelay = (attemptCount, error) => {
     }
     return RATE_LIMIT_CONFIG.cooldownPeriod
   }
-  
+
   // Exponential backoff with jitter
   const baseDelay = RETRY_CONFIG.baseDelay * Math.pow(RETRY_CONFIG.backoffMultiplier, attemptCount)
   const jitter = baseDelay * RETRY_CONFIG.jitterFactor * Math.random()
   const delay = Math.min(baseDelay + jitter, RETRY_CONFIG.maxDelay)
-  
+
   return Math.floor(delay)
 }
 
 const isCurrentlyRateLimited = () => {
   const now = Date.now()
-  
+
   // Check if we're in a cooldown period
   if (requestTracker.rateLimitUntil && now < requestTracker.rateLimitUntil) {
     return true
   }
-  
+
   // Clear expired cooldown
   if (requestTracker.rateLimitUntil && now >= requestTracker.rateLimitUntil) {
     requestTracker.rateLimitUntil = null
     requestTracker.isRateLimited = false
   }
-  
+
   // Clean old requests from tracker
   const windowStart = now - RATE_LIMIT_CONFIG.requestWindow
   requestTracker.requests = requestTracker.requests.filter(time => time > windowStart)
-  
+
   // Check if we've exceeded the rate limit
   if (requestTracker.requests.length >= RATE_LIMIT_CONFIG.maxRequestsPerMinute) {
     requestTracker.isRateLimited = true
     requestTracker.rateLimitUntil = now + RATE_LIMIT_CONFIG.cooldownPeriod
     return true
   }
-  
+
   return false
 }
 
@@ -141,10 +141,10 @@ const recordRequest = () => {
 
 const withRetry = (fn, options = {}) => {
   const config = { ...RETRY_CONFIG, ...options }
-  
+
   return async (...args) => {
     let lastError
-    
+
     for (let attempt = 0; attempt <= config.maxRetries; attempt++) {
       try {
         if (isCurrentlyRateLimited()) {
@@ -154,7 +154,7 @@ const withRetry = (fn, options = {}) => {
         recordRequest()
         const result = await fn(...args)
         return result
-        
+
       } catch (error) {
         lastError = error
         if (attempt === config.maxRetries) {
@@ -165,7 +165,7 @@ const withRetry = (fn, options = {}) => {
         }
         const delay = calculateRetryDelay(attempt, error)
         console.warn(`Request failed (attempt ${attempt + 1}/${config.maxRetries + 1}). Retrying in ${delay}ms...`, error.message)
-        
+
         await new Promise(resolve => setTimeout(resolve, delay))
       }
     }
@@ -176,11 +176,11 @@ const withRetry = (fn, options = {}) => {
 const createErrorInfo = (error, context = 'API request') => {
   const errorType = classifyError(error)
   const isRetryable = isRetryableError(error)
-  
+
   let userMessage = ''
-  let technicalMessage = error.message || 'Unknown error'
+  const technicalMessage = error.message || 'Unknown error'
   let suggestions = []
-  
+
   switch (errorType) {
     case ERROR_TYPES.NETWORK:
       userMessage = 'Network connection failed'
@@ -190,7 +190,7 @@ const createErrorInfo = (error, context = 'API request') => {
         'Verify that ESPN.com is accessible'
       ]
       break
-      
+
     case ERROR_TYPES.RATE_LIMITED:
       userMessage = 'Too many requests sent'
       suggestions = [
@@ -198,7 +198,7 @@ const createErrorInfo = (error, context = 'API request') => {
         'The app will automatically retry shortly'
       ]
       break
-      
+
     case ERROR_TYPES.SERVER_ERROR:
       userMessage = 'ESPN servers are temporarily unavailable'
       suggestions = [
@@ -206,7 +206,7 @@ const createErrorInfo = (error, context = 'API request') => {
         'Check ESPN.com status if the problem persists'
       ]
       break
-      
+
     case ERROR_TYPES.TIMEOUT:
       userMessage = 'Request timed out'
       suggestions = [
@@ -214,7 +214,7 @@ const createErrorInfo = (error, context = 'API request') => {
         'Try again with a more stable connection'
       ]
       break
-      
+
     case ERROR_TYPES.CLIENT_ERROR:
       userMessage = 'Invalid request or data not found'
       suggestions = [
@@ -222,7 +222,7 @@ const createErrorInfo = (error, context = 'API request') => {
         'Try selecting a different game or date'
       ]
       break
-      
+
     default:
       userMessage = 'An unexpected error occurred'
       suggestions = [
@@ -230,7 +230,7 @@ const createErrorInfo = (error, context = 'API request') => {
         'Restart the application if the problem persists'
       ]
   }
-  
+
   return {
     type: errorType,
     userMessage,
@@ -246,7 +246,7 @@ const createErrorInfo = (error, context = 'API request') => {
 
 const logError = (errorInfo) => {
   const { type, context, technicalMessage, statusCode, errorCode, timestamp } = errorInfo
-  
+
   console.error(`[${timestamp}] ${type} Error in ${context}:`)
   console.error(`  Message: ${technicalMessage}`)
   if (statusCode) console.error(`  Status Code: ${statusCode}`)
@@ -257,7 +257,7 @@ const getRateLimitStatus = () => {
   const now = Date.now()
   const windowStart = now - RATE_LIMIT_CONFIG.requestWindow
   const recentRequests = requestTracker.requests.filter(time => time > windowStart).length
-  
+
   return {
     isRateLimited: requestTracker.isRateLimited,
     rateLimitUntil: requestTracker.rateLimitUntil,

@@ -1,6 +1,7 @@
 const { createSlice } = require('@reduxjs/toolkit')
 const { fetchGameDetail, pollGameUpdates } = require('./thunks/gamesThunks')
 const { MAX_PLAYS_HISTORY, MAX_CACHED_GAMES } = require('./constants/memory')
+const logger = require('../utils/logger')
 
 // Initial state
 const initialState = {
@@ -65,19 +66,12 @@ const gamesSlice = createSlice({
     cleanupOldGames: (state, action) => {
       const activeGameIds = action.payload || []
       const gameIds = Object.keys(state.games)
-      let cleanedGames = 0
-      let cleanedPlays = 0
 
       gameIds.forEach(gameId => {
         if (!activeGameIds.includes(gameId)) {
-          const game = state.games[gameId]
-          if (game && game.liveData && game.liveData.plays) {
-            cleanedPlays += game.liveData.plays.length
-          }
           delete state.games[gameId]
           delete state.pollingIntervals[gameId]
           delete state.lastPolled[gameId]
-          cleanedGames++
         }
       })
 
@@ -122,12 +116,7 @@ const gamesSlice = createSlice({
         const gamesToRemove = Math.max(0, gameIds.length - MAX_CACHED_GAMES)
         const removedGames = inactiveGames.slice(0, gamesToRemove)
 
-        let cleanedPlays = 0
         removedGames.forEach(({ id }) => {
-          const game = state.games[id]
-          if (game && game.liveData && game.liveData.plays) {
-            cleanedPlays += game.liveData.plays.length
-          }
           delete state.games[id]
           delete state.pollingIntervals[id]
           delete state.lastPolled[id]
@@ -210,7 +199,7 @@ const gamesSlice = createSlice({
           if (shouldStopPolling) {
             // Game is completed, stop polling
             delete state.pollingIntervals[gameId]
-            console.log(`Game ${gameId} completed, stopped polling`)
+            logger.info(`Game ${gameId} completed, stopped polling`)
             return
           }
 
@@ -239,7 +228,7 @@ const gamesSlice = createSlice({
       })
 
       // Handle pollGameUpdates rejected
-      .addCase(pollGameUpdates.rejected, (state, action) => {
+      .addCase(pollGameUpdates.rejected, (_state, _action) => {
         // Don't set loading error for polling failures
         // If polling fails too many times, it will be handled by the polling service
       })

@@ -1,6 +1,7 @@
 const axios = require('axios')
 const { format } = require('date-fns')
 const { withRetry, createErrorInfo, logError, recordRequest, isCurrentlyRateLimited } = require('./errorHandler')
+const logger = require('../utils/logger')
 
 // ESPN API base URLs
 const ESPN_BASE_URL = 'https://site.api.espn.com/apis/site/v2/sports/basketball/nba'
@@ -27,10 +28,8 @@ apiClient.interceptors.request.use(
       return Promise.reject(error)
     }
 
-    // Log only in development mode
-    if (process.env.NODE_ENV === 'development') {
-      console.log(`ESPN API Request: ${config.method?.toUpperCase()} ${config.url}`)
-    }
+    // Log requests in development
+    logger.debug(`ESPN API Request: ${config.method?.toUpperCase()} ${config.url}`)
     return config
   },
   (error) => {
@@ -43,16 +42,14 @@ apiClient.interceptors.request.use(
 // Add response interceptor for error handling and logging
 apiClient.interceptors.response.use(
   (response) => {
-    // Log only in development mode
-    if (process.env.NODE_ENV === 'development') {
-      console.log(`ESPN API Response: ${response.status} ${response.config.url} (${response.data ? 'with data' : 'no data'})`)
-    }
+    // Log responses in development
+    logger.debug(`ESPN API Response: ${response.status} ${response.config.url} (${response.data ? 'with data' : 'no data'})`)
     return response
   },
   (error) => {
     const errorInfo = createErrorInfo(error, 'API response')
     logError(errorInfo)
-    
+
     // Enhance error with additional context
     if (error.response?.status === 429) {
       error.message = 'Rate limit exceeded. Please wait before making more requests.'
@@ -61,7 +58,7 @@ apiClient.interceptors.response.use(
     } else if (error.response?.status === 404) {
       error.message = 'Requested data not found. The game or date may not be available.'
     }
-    
+
     return Promise.reject(error)
   }
 )
@@ -69,7 +66,7 @@ apiClient.interceptors.response.use(
 // Create retry-wrapped API functions
 const makeScoreboardRequest = withRetry(async (date) => {
   const dateStr = format(date, 'yyyyMMdd')
-  const response = await apiClient.get(`/scoreboard`, {
+  const response = await apiClient.get('/scoreboard', {
     params: {
       dates: dateStr,
       limit: 50
@@ -82,7 +79,7 @@ const makeScoreboardRequest = withRetry(async (date) => {
 })
 
 const makeGameDetailRequest = withRetry(async (gameId) => {
-  const response = await apiClient.get(`/summary`, {
+  const response = await apiClient.get('/summary', {
     params: {
       event: gameId
     }
@@ -96,16 +93,16 @@ const makeGameDetailRequest = withRetry(async (gameId) => {
 const fetchScoreboardData = async (date) => {
   try {
     const data = await makeScoreboardRequest(date)
-    
+
     if (!data) {
       throw new Error('No data received from ESPN API')
     }
-    
+
     return data
   } catch (error) {
     const errorInfo = createErrorInfo(error, 'fetchScoreboardData')
     logError(errorInfo)
-    
+
     // Re-throw with enhanced message
     const enhancedError = new Error(errorInfo.userMessage)
     enhancedError.originalError = error
@@ -119,18 +116,18 @@ const fetchGameDetailData = async (gameId) => {
     if (!gameId) {
       throw new Error('Game ID is required')
     }
-    
+
     const data = await makeGameDetailRequest(gameId)
-    
+
     if (!data) {
       throw new Error('No game data received from ESPN API')
     }
-    
+
     return data
   } catch (error) {
     const errorInfo = createErrorInfo(error, 'fetchGameDetailData')
     logError(errorInfo)
-    
+
     // Re-throw with enhanced message
     const enhancedError = new Error(errorInfo.userMessage)
     enhancedError.originalError = error
@@ -336,10 +333,10 @@ const validateApiResponse = (response, type) => {
   switch (type) {
     case 'scoreboard':
       return Array.isArray(response.events)
-    
+
     case 'gameDetail':
       return !!(response.header?.competitions?.[0])
-    
+
     default:
       return false
   }
@@ -350,28 +347,28 @@ const getApiErrorMessage = (error) => {
   if (error.errorInfo) {
     return error.errorInfo.userMessage
   }
-  
+
   // Fallback to basic error classification
   if (error.code === 'ENOTFOUND' || error.code === 'ECONNREFUSED') {
     return 'Network connection failed. Please check your internet connection.'
   }
-  
+
   if (error.response?.status === 429 || error.code === 'RATE_LIMITED') {
     return 'Too many requests. Please wait a moment before trying again.'
   }
-  
+
   if (error.response?.status >= 500) {
     return 'ESPN servers are currently unavailable. Please try again later.'
   }
-  
+
   if (error.response?.status === 404) {
     return 'Game data not found. The game may not exist or may not be available yet.'
   }
-  
+
   if (error.code === 'ECONNABORTED' || error.code === 'ETIMEDOUT') {
     return 'Request timed out. Please try again.'
   }
-  
+
   return error.message || 'An unexpected error occurred while fetching data.'
 }
 
@@ -380,10 +377,10 @@ const isApiErrorRetryable = (error) => {
   if (error.errorInfo) {
     return error.errorInfo.isRetryable
   }
-  
+
   // Fallback to basic retry logic
-  return error.code === 'ENOTFOUND' || 
-         error.code === 'ECONNREFUSED' || 
+  return error.code === 'ENOTFOUND' ||
+         error.code === 'ECONNREFUSED' ||
          error.code === 'ECONNABORTED' ||
          error.code === 'ETIMEDOUT' ||
          (error.response?.status >= 500) ||

@@ -1,16 +1,7 @@
 const React = require('react');
 const { useState, useEffect, useMemo, useCallback } = React;
-
-// Import screen manager for key handling
-const screenManager = require('../screen');
-
-// Hardcoded default colors (no longer configurable)
-const DEFAULT_COLORS = {
-  liveGame: 'green',
-  error: 'red',
-  info: 'blue',
-  teamName: 'cyan'
-};
+const { DEFAULT_COLORS } = require('../constants/colors');
+const { useKeyboardNavigation } = require('../hooks/useKeyboardNavigation');
 
 /**
  * PlayByPlay component for displaying scrollable game events
@@ -61,61 +52,22 @@ const PlayByPlay = React.memo(({ plays = [], currentPlay = null }) => {
     });
   }, [plays, currentPlay]);
   
-  // Handle keyboard scrolling
-  useEffect(() => {
-    const screen = screenManager.getScreen();
-    if (!screen) return;
-    
-    const handlePlayByPlayKeys = (ch, key) => {
-      if (!key) return;
-      
-      switch (key.name) {
-        case 'up':
-        case 'k':
-          // Scroll up
-          setScrollPosition(prev => Math.max(0, prev - 1));
-          break;
-          
-        case 'down':
-        case 'j':
-          // Scroll down
-          setScrollPosition(prev => 
-            Math.min(Math.max(0, formattedPlays.length - visibleLines), prev + 1)
-          );
-          break;
-          
-        case 'pageup':
-          // Page up
-          setScrollPosition(prev => Math.max(0, prev - visibleLines));
-          break;
-          
-        case 'pagedown':
-          // Page down
-          setScrollPosition(prev => 
-            Math.min(Math.max(0, formattedPlays.length - visibleLines), prev + visibleLines)
-          );
-          break;
-          
-        case 'home':
-          // Go to top
-          setScrollPosition(0);
-          break;
-          
-        case 'end':
-          // Go to bottom
-          setScrollPosition(Math.max(0, formattedPlays.length - visibleLines));
-          break;
-      }
-    };
-    
-    // Register key handler
-    screen.on('keypress', handlePlayByPlayKeys);
-    
-    // Cleanup
-    return () => {
-      screen.removeListener('keypress', handlePlayByPlayKeys);
-    };
-  }, [formattedPlays.length, visibleLines]);
+  useKeyboardNavigation({
+    up: () => setScrollPosition(prev => Math.max(0, prev - 1)),
+    k: () => setScrollPosition(prev => Math.max(0, prev - 1)),
+    down: () => setScrollPosition(prev =>
+      Math.min(Math.max(0, formattedPlays.length - visibleLines), prev + 1)
+    ),
+    j: () => setScrollPosition(prev =>
+      Math.min(Math.max(0, formattedPlays.length - visibleLines), prev + 1)
+    ),
+    pageup: () => setScrollPosition(prev => Math.max(0, prev - visibleLines)),
+    pagedown: () => setScrollPosition(prev =>
+      Math.min(Math.max(0, formattedPlays.length - visibleLines), prev + visibleLines)
+    ),
+    home: () => setScrollPosition(0),
+    end: () => setScrollPosition(Math.max(0, formattedPlays.length - visibleLines))
+  });
   
   // Auto-scroll to current play when it changes
   useEffect(() => {

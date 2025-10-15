@@ -1,11 +1,6 @@
 const React = require('react');
 const { useMemo } = React;
-
-// Hardcoded default colors (no longer configurable)
-const DEFAULT_COLORS = {
-  error: 'red',
-  info: 'blue'
-};
+const { DEFAULT_COLORS } = require('../constants/colors');
 
 /**
  * LiveGame component for displaying active game information

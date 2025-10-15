@@ -1,10 +1,7 @@
 const React = require('react');
 const { useMemo } = React;
-
-// Hardcoded default colors (no longer configurable)
-const DEFAULT_COLORS = {
-  info: 'blue'
-};
+const { DEFAULT_COLORS } = require('../constants/colors');
+const { formatPercentage, formatShootingStats } = require('../utils/formatting');
 
 /**
  * BoxScore component for displaying team statistics comparison
@@ -24,34 +21,11 @@ const BoxScore = React.memo(({ teamStats = [] }) => {
     return { away, home };
   }, [teamStats]);
   
-  // Format percentage with visual indicator
-  const formatPercentage = (value, compareValue = null) => {
-    if (value === undefined || value === null) return 'N/A';
-    
-    const percentage = (value * 100).toFixed(1);
+  const formatPercentageWithComparison = (value, compareValue = null) => {
+    const basePercentage = formatPercentage(value);
+    if (basePercentage === 'N/A') return basePercentage;
+
     let indicator = '';
-    
-    // Add visual indicator if comparing values
-    if (compareValue !== null && compareValue !== undefined) {
-      if (value > compareValue) {
-        indicator = ' ↑'; // Better performance
-      } else if (value < compareValue) {
-        indicator = ' ↓'; // Worse performance
-      } else {
-        indicator = ' ='; // Equal performance
-      }
-    }
-    
-    return `${percentage}%${indicator}`;
-  };
-  
-  // Format counting stat with comparison
-  const formatCountingStat = (value, compareValue = null) => {
-    if (value === undefined || value === null) return '0';
-    
-    let indicator = '';
-    
-    // Add visual indicator if comparing values
     if (compareValue !== null && compareValue !== undefined) {
       if (value > compareValue) {
         indicator = ' ↑';
@@ -61,16 +35,32 @@ const BoxScore = React.memo(({ teamStats = [] }) => {
         indicator = ' =';
       }
     }
-    
+
+    return `${basePercentage}${indicator}`;
+  };
+
+  const formatCountingStat = (value, compareValue = null) => {
+    if (value === undefined || value === null) return '0';
+
+    let indicator = '';
+    if (compareValue !== null && compareValue !== undefined) {
+      if (value > compareValue) {
+        indicator = ' ↑';
+      } else if (value < compareValue) {
+        indicator = ' ↓';
+      } else {
+        indicator = ' =';
+      }
+    }
+
     return `${value}${indicator}`;
   };
-  
-  // Format shooting stats (made/attempted)
-  const formatShootingStats = (made, attempted, percentage, compareMade = null, compareAttempted = null, comparePercentage = null) => {
+
+  const formatShootingStatsWithComparison = (made, attempted, percentage, compareMade = null, compareAttempted = null, comparePercentage = null) => {
     const madeStr = made !== undefined ? made : 0;
     const attemptedStr = attempted !== undefined ? attempted : 0;
-    const pctStr = formatPercentage(percentage, comparePercentage);
-    
+    const pctStr = formatPercentageWithComparison(percentage, comparePercentage);
+
     return `${madeStr}/${attemptedStr} (${pctStr})`;
   };
   
@@ -167,35 +157,33 @@ const BoxScore = React.memo(({ teamStats = [] }) => {
     }
   };
   
-  // Format stat for display
   const formatStat = (category, awayValue, homeValue) => {
     if (category.format === 'shooting') {
-      const awayFormatted = awayValue ? 
-        formatShootingStats(
-          awayValue.made, 
-          awayValue.attempted, 
+      const awayFormatted = awayValue ?
+        formatShootingStatsWithComparison(
+          awayValue.made,
+          awayValue.attempted,
           awayValue.percentage,
           homeValue?.made,
           homeValue?.attempted,
           homeValue?.percentage
         ) : 'N/A';
-        
-      const homeFormatted = homeValue ? 
-        formatShootingStats(
-          homeValue.made, 
-          homeValue.attempted, 
+
+      const homeFormatted = homeValue ?
+        formatShootingStatsWithComparison(
+          homeValue.made,
+          homeValue.attempted,
           homeValue.percentage,
           awayValue?.made,
           awayValue?.attempted,
           awayValue?.percentage
         ) : 'N/A';
-        
+
       return { away: awayFormatted, home: homeFormatted };
     } else {
-      // Counting stats
       const awayFormatted = formatCountingStat(awayValue, homeValue);
       const homeFormatted = formatCountingStat(homeValue, awayValue);
-      
+
       return { away: awayFormatted, home: homeFormatted };
     }
   };

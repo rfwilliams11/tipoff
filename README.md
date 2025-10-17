@@ -22,16 +22,6 @@ npx nba-tipoff
 npm install -g nba-tipoff
 ```
 
-## Usage
-
-```bash
-# Launch with today's games
-nba-tipoff
-
-# Or use with npx (no installation required)
-npx nba-tipoff
-```
-
 ## Development
 
 ### Setup
@@ -67,25 +57,6 @@ npm test
 # Run tests with coverage
 npm run test:coverage
 ```
-
-### Project Structure
-
-- `bin/tipoff` - CLI executable entry point
-- `src/main.js` - Application bootstrap (auto-starts when run directly)
-- `src/cli.js` - Command-line interface handler
-- `src/components/` - React components for terminal UI
-- `src/store/` - Redux store and slices (scoreboard, games)
-- `src/services/` - API services and polling logic
-- `src/utils/` - Utility functions and helpers
-
-### Architecture Notes
-
-- **Terminal UI**: Built with `react-blessed` for rendering React components in the terminal
-- **State Management**: Redux Toolkit for managing application state
-- **Live Updates**: Polling service for real-time game data from ESPN API
-- **Entry Points**:
-  - `npm run dev` executes `src/main.js` directly (auto-starts)
-  - `nba-tipoff` command runs through `bin/tipoff` → `cli.js` → `main.start()`
 
 ## Features
 

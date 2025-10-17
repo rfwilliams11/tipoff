@@ -1,6 +1,20 @@
-# nba-tipoff - NBA Terminal Viewer
+# Tipoff - NBA Terminal Viewer
 
-A command-line interface for following live NBA games directly in your terminal.
+Follow live NBA games directly in your terminal!
+
+![screenshot](./demo.gif)
+
+## Why?
+
+A quick, discreet way to follow live NBA games or follow up on missed matchups from the night before
+
+Inspired by [playball(https://github.com/paaatrick/playball/tree/main)]
+
+## Quick Start
+
+```bash
+npx nba-tipoff
+```
 
 ## Installation
 
@@ -84,6 +98,7 @@ npm run test:coverage
 ## Keyboard Controls
 
 ### Scoreboard View
+
 - `↑`/`↓` or `j`/`k` - Navigate between games
 - `Enter` - View detailed game information
 - `n` - Next day
@@ -92,6 +107,7 @@ npm run test:coverage
 - `q` or `Esc` - Quit
 
 ### Game Detail View
+
 - `c` - Return to scoreboard
 - `q` or `Esc` - Quit
 

@@ -9,7 +9,7 @@ class CLI {
   setupCommands() {
     this.program
       .name('tipoff')
-      .description('A command-line interface for watching live NBA games in your terminal')
+      .description('A command-line interface for following live NBA games in your terminal')
       .version('1.0.0');
 
     this.program

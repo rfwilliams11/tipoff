@@ -1,24 +1,21 @@
-# Tipoff - NBA Terminal Viewer
+# nba-tipoff - NBA Terminal Viewer
 
 A command-line interface for following live NBA games directly in your terminal.
 
 ## Installation
 
 ```bash
-npm install -g tipoff
+npm install -g nba-tipoff
 ```
 
 ## Usage
 
 ```bash
 # Launch with today's games
-tipoff
+nba-tipoff
 
-# Show games for a specific date
-tipoff --date 2025-10-23
-
-# Filter games by team
-tipoff --team GSW
+# Or use with npx (no installation required)
+npx nba-tipoff
 ```
 
 ## Development
@@ -44,11 +41,7 @@ npm link
 npm run dev
 
 # Or use the CLI command (if linked)
-tipoff
-
-# Run with options
-tipoff --date 2024-01-15
-tipoff --team LAL
+nba-tipoff
 ```
 
 ### Testing
@@ -78,7 +71,7 @@ npm run test:coverage
 - **Live Updates**: Polling service for real-time game data from ESPN API
 - **Entry Points**:
   - `npm run dev` executes `src/main.js` directly (auto-starts)
-  - `tipoff` command runs through `bin/tipoff` → `cli.js` → `main.start()`
+  - `nba-tipoff` command runs through `bin/tipoff` → `cli.js` → `main.start()`
 
 ## Features
 
@@ -96,12 +89,11 @@ npm run test:coverage
 - `n` - Next day
 - `p` - Previous day
 - `t` - Go to today
-- `q` - Quit
+- `q` or `Esc` - Quit
 
 ### Game Detail View
-- `c` or `Esc` - Return to scoreboard
-- `↑`/`↓` - Scroll through content
-- `q` - Quit
+- `c` - Return to scoreboard
+- `q` or `Esc` - Quit
 
 ## License
 

@@ -1,10 +1,10 @@
 {
-  "name": "tipoff",
+  "name": "nba-tipoff",
   "version": "1.0.0",
-  "description": "A command-line interface for watching live NBA games in your terminal",
+  "description": "A command-line interface for following live NBA games in your terminal",
   "main": "src/main.js",
   "bin": {
-    "tipoff": "./bin/tipoff"
+    "nba-tipoff": "./bin/tipoff"
   },
   "scripts": {
     "start": "node src/main.js",
@@ -21,7 +21,7 @@
     "clean": "rm -rf node_modules package-lock.json",
     "reinstall": "npm run clean && npm install",
     "prepublishOnly": "npm run build:prod",
-    "postinstall": "echo 'Tipoff installed successfully! Run \"tipoff --help\" to get started.'",
+    "postinstall": "echo 'nba-tipoff installed successfully! Run \"nba-tipoff --help\" to get started.'",
     "cli": "node bin/tipoff",
     "cli:help": "node bin/tipoff --help",
     "cli:config": "node bin/tipoff config show",
@@ -37,16 +37,16 @@
     "blessed",
     "live-scores"
   ],
-  "author": "",
+  "author": "rfwilliams11",
   "license": "MIT",
   "repository": {
     "type": "git",
-    "url": "https://github.com/username/tipoff.git"
+    "url": "https://github.com/rfwilliams11/tipoff.git"
   },
   "bugs": {
-    "url": "https://github.com/username/tipoff/issues"
+    "url": "https://github.com/rfwilliams11/tipoff/issues"
   },
-  "homepage": "https://github.com/username/tipoff#readme",
+  "homepage": "https://github.com/rfwilliams11/tipoff#readme",
   "dependencies": {
     "@reduxjs/toolkit": "^2.0.1",
     "axios": "^1.6.2",

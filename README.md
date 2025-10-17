@@ -8,7 +8,7 @@ Follow live NBA games directly in your terminal!
 
 A quick, discreet way to follow live NBA games or follow up on missed matchups from the night before
 
-Inspired by [playball(https://github.com/paaatrick/playball/tree/main)]
+Inspired by [playball](https://github.com/paaatrick/playball/tree/main)
 
 ## Quick Start
 

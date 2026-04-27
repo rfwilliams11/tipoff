@@ -1,12 +1,16 @@
 # Tipoff - NBA Terminal Viewer
 
+[![npm version](https://img.shields.io/npm/v/nba-tipoff.svg)](https://www.npmjs.com/package/nba-tipoff)
+[![npm downloads](https://img.shields.io/npm/dm/nba-tipoff.svg)](https://www.npmjs.com/package/nba-tipoff)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+
 Follow live NBA games directly in your terminal!
 
 ![screenshot](./demo.gif)
 
 ## Why?
 
-A quick, discreet way to follow live NBA games or follow up on missed matchups from the night before
+A quick, discreet way to follow live NBA games or follow up on missed matchups from the night before.
 
 Inspired by [playball](https://github.com/paaatrick/playball/tree/main)
 
